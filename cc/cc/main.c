@@ -1,6 +1,11 @@
+#include "cc.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+
+FILE *g_in = NULL;
+FILE *g_out = NULL;
 
 int main(int argc, char **argv)
 {
@@ -10,8 +15,8 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    FILE *in = fopen(argv[1], "r");
-    if (!in)
+    g_in = fopen(argv[1], "r");
+    if (!g_in)
     {
         printf("%s: %s\n", argv[1], strerror(errno));
         return -1;
@@ -20,11 +25,12 @@ int main(int argc, char **argv)
     char *oname = strdup(argv[1]);
     oname[strlen(oname) - 1] = 's';
 
-    FILE *out = fopen(oname, "w+");
+    g_out = fopen(oname, "w+");
 
+    struct ast *ast = expr();
+    cg(ast);
 
-
-    fclose(in);
-    fclose(out);
+    fclose(g_in);
+    fclose(g_out);
     return 0;
 }
