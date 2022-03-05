@@ -8,6 +8,12 @@ struct ast
 
 };
 
+// Token types
+enum
+{
+    T_EOF
+};
+
 // Token
 struct tok
 {
@@ -16,4 +22,11 @@ struct tok
     uint64_t i; // Integer
 };
 
-struct tok *scan(); // Scan next token
+// scan.c
+struct tok scan(); // Scan next token
+
+// expr.c
+struct ast *expr(); // Parse expression
+
+// stmt.c
+struct ast *stmt(); // Parse statement

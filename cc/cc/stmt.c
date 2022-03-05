@@ -1,6 +1,6 @@
 #include "cc.h"
 
-struct tok scan()
+struct ast *stmt()
 {
 
 }
