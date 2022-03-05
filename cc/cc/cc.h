@@ -7,6 +7,7 @@
 
 extern FILE *g_in;  // Input file
 extern FILE *g_out; // Output file
+extern struct tok g_tok; // Current token
 
 // AST types
 enum
@@ -26,9 +27,9 @@ enum
 struct ast
 {
     struct ast *left, *mid, *right;
-    int op;
+    int type, op;
 
-    uint64_t iv;
+    uint64_t iv; // Integer value
 };
 
 // Token types

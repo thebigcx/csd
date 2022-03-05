@@ -4,21 +4,19 @@
 
 struct tok scan()
 {
-    struct tok t = { 0 };
-
     char c;
     do c = fgetc(g_in); while (isblank(c));
 
     switch (c)
     {
-        case '+': t.type = T_PLUS; return t;
+        case '+': g_tok.type = T_PLUS; return g_tok;
     }
 
     if (isdigit(c))
     {
-        t.iv = c - '0';
-        t.type = T_ILIT;
+        g_tok.iv = c - '0';
+        g_tok.type = T_ILIT;
     }
 
-    return t;
+    return g_tok;
 }

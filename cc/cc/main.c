@@ -6,6 +6,7 @@
 
 FILE *g_in = NULL;
 FILE *g_out = NULL;
+struct tok g_tok = { 0 };
 
 int main(int argc, char **argv)
 {
@@ -27,7 +28,7 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
-    struct ast *ast = expr();
+    struct ast *ast = stmt();
     cg(ast);
 
     fclose(g_in);
