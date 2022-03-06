@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define NEW(T) (calloc(1, sizeof(T)))
 
@@ -9,12 +10,21 @@ extern FILE *g_in;  // Input file
 extern FILE *g_out; // Output file
 extern struct tok g_tok; // Current token
 
+struct type
+{
+    int sign; // Signed/unsigned
+    int size; // 0, 1, 2, 4, 8, etc.
+
+    //int arrlen; // Array length (for computing size of entire array)
+};
+
 // AST types
 enum
 {
     A_BINOP,
     A_ILIT,
-    A_OP
+    A_OP,
+    A_DECL
 };
 
 // Operator types
@@ -30,13 +40,23 @@ struct ast
     int type, op;
 
     uint64_t iv; // Integer value
+    char *sv; // String value
+
+    struct type vtype; // Variable type
 };
 
 // Token types
 enum
 {
+    T_SEMI,
     T_ILIT,
     T_PLUS,
+    T_PUB,
+    T_FN,
+    T_LET,
+    T_IDENT,
+    T_COLON,
+    T_U32,
     T_EOF
 };
 
@@ -49,7 +69,9 @@ struct tok
 };
 
 // scan.c
-struct tok scan(); // Scan next token
+struct tok *scan(); // Scan next token
+int qualif(); // Current token qualifier?
+struct tok expect(int t); // Expect a token
 
 // expr.c
 struct ast *expr(); // Parse expression
@@ -59,3 +81,6 @@ struct ast *stmt(); // Parse statement
 
 // cg.c
 int cg(struct ast *); // Generate code
+
+// type.c
+struct type type(); // Parse type

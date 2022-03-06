@@ -3,6 +3,7 @@
 const char *regs[] = { "rax", "rbx", "rcx", "rdx" };
 
 #define REGCNT (sizeof(regs) / sizeof(regs[0]))
+#define NOREG (-1)
 
 static int s_reglst[REGCNT] = { 0 };
 
@@ -18,6 +19,12 @@ int ralloc()
 void rfree(int r)
 {
     s_reglst[r] = 0;
+}
+
+// Discard the result of an operation (register)
+void discard(int r)
+{
+    if (r != NOREG) rfree(r);
 }
 
 int cgilit(struct ast *ast)
@@ -36,12 +43,16 @@ int cgadd(int r1, int r2)
 
 int cgbinop(struct ast *ast)
 {
-    int r1 = cgilit(ast->left);
-    int r2 = cgilit(ast->right);
+    int r1 = cg(ast->left);
+    int r2 = cg(ast->right);
     return cgadd(r1, r2);
 }
 
 int cg(struct ast *ast)
 {
-    cgbinop(ast);
+    switch (ast->type)
+    {
+        case A_BINOP: return cgbinop(ast);
+        case A_ILIT:  return cgilit(ast);
+    }
 }

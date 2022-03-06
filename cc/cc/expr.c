@@ -19,6 +19,11 @@ struct ast *primary()
     return ast;
 }
 
+int term()
+{
+    return g_tok.type == T_SEMI;
+}
+
 // Arithmetic operator, e.g. + - * /
 struct ast *arithop()
 {
@@ -36,11 +41,15 @@ struct ast *arithop()
 
 struct ast *expr()
 {
+    struct ast *left = primary();
+    if (term())
+        return left;
+
     struct ast *ast = NEW(struct ast);
 
-    ast->left  = primary();
+    ast->right = left;
     ast->mid   = arithop();
-    ast->right = primary();
+    ast->left  = expr();
 
     return ast;
 }

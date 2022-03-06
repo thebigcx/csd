@@ -1,5 +1,7 @@
-SRC=main.c stmt.c expr.c scan.c cg.c
+SRC=main.c stmt.c expr.c scan.c cg.c type.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
+
+CFLAGS=-g
 
 BIN=cc
 
@@ -9,4 +11,4 @@ $(BIN): $(OBJ)
 	gcc -o $@ $^
 
 %.o: %.c
-	gcc -c $< -o $@
+	gcc -c $< -o $@ $(CFLAGS)
