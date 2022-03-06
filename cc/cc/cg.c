@@ -76,7 +76,14 @@ int cgdecl(struct ast *ast)
 {
     if (ast->vtype.func && !ast->vtype.ptr)
     {
+        fprintf(g_out, "%s:\n", ast->sv);
+        fprintf(g_out, "\tpush %%rbp\n");
+        fprintf(g_out, "\tmov %%rsp, %%rbp\n");
+        
         cg(ast->left);
+                
+        fprintf(g_out, "\tleave\n");
+        fprintf(g_out, "\tret\n");
     }
 }
 

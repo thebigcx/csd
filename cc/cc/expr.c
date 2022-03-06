@@ -15,6 +15,9 @@ struct ast *primary()
             break;
         
         case T_IDENT:
+            if (!lookup(g_tok.sv))
+                printf("Undeclared symbol '%s'\n", g_tok.sv);
+
             ast->type = A_IDENT;
             ast->sv = g_tok.sv;
             break;
@@ -26,7 +29,6 @@ struct ast *primary()
 
 int term()
 {
-    printf("%d, ", g_tok.type);
     return g_tok.type == T_SEMI;
 }
 

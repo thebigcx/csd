@@ -22,6 +22,8 @@ struct ast *decl()
         expect(T_RBRACE);
     }
 
+    addsym(ast->sv, ast->vtype);
+
     return ast;
 }
 
@@ -40,6 +42,9 @@ struct ast *cmpdstmt()
     struct ast *ast = NEW(struct ast), *ret = ast;
     ast->type = A_CMPD;
 
+    struct sym **parent = getscope();
+    setscope(&ast->symtab);
+
     while (g_tok.type != T_EOF && g_tok.type != T_RBRACE)
     {
         ast->next = stmt();
@@ -50,5 +55,6 @@ struct ast *cmpdstmt()
         expect(T_SEMI);
     }
 
+    setscope(parent);
     return ret;
 }

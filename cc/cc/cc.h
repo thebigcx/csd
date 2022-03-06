@@ -51,6 +51,8 @@ struct ast
 
     struct type vtype; // Variable type
 
+    struct sym *symtab; // Symbol table
+
     struct ast *next, *prev; // Next and previous statements (linked list for block of statements)
 };
 
@@ -84,6 +86,18 @@ struct tok
     uint64_t iv; // Integer
 };
 
+// Symbol
+struct sym
+{
+    const char *name;
+    struct type type;
+    int global; // Global/local
+    int stckoff; // Offset to stack pointer
+
+    struct sym *next; // Next symbol in linked list
+    //struct sym *parent; // Parent symbol table
+};
+
 // scan.c
 struct tok *scan(); // Scan next token
 int qualif(); // Current token qualifier?
@@ -101,3 +115,10 @@ int cg(struct ast *); // Generate code
 
 // type.c
 struct type type(); // Parse type
+
+// sym.c
+void setscope(struct sym **symtab); // Set symbol table scope
+struct sym **getscope(); // Get symbol table scope
+
+struct sym *lookup(const char *name); // Look up symbol in current scope
+struct sym *addsym(const char *name, struct type type); // Add symbol to symbol table
