@@ -13,12 +13,21 @@ struct ast *decl()
     expect(T_COLON);
 
     ast->vtype = type();
+
+    // Parse function body if necessary
+    if (ast->vtype.func && !ast->vtype.ptr)
+    {
+        expect(T_LBRACE);
+        ast->left = cmpdstmt();
+        expect(T_RBRACE);
+    }
+
     return ast;
 }
 
 struct ast *stmt()
 {
-    switch (scan()->type)
+    switch (g_tok.type)
     {
         case T_LET: return decl();
         default: return expr();
@@ -31,7 +40,7 @@ struct ast *cmpdstmt()
     struct ast *ast = NEW(struct ast), *ret = ast;
     ast->type = A_CMPD;
 
-    while (g_tok.type != T_EOF)
+    while (g_tok.type != T_EOF && g_tok.type != T_RBRACE)
     {
         ast->next = stmt();
         ast->next->prev = ast;

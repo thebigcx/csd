@@ -26,6 +26,7 @@ struct ast *primary()
 
 int term()
 {
+    printf("%d, ", g_tok.type);
     return g_tok.type == T_SEMI;
 }
 

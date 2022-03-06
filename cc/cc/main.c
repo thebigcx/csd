@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
+    scan();
     struct ast *ast = cmpdstmt();
     cg(ast);
 

@@ -14,7 +14,7 @@ struct tok *scan()
     char buf[32];
 
     char c;
-    do c = fgetc(g_in); while (isblank(c) && c != -1);
+    do c = fgetc(g_in); while (c != -1 && isspace(c));
 
     // fgetc() returned EOF, therefore finished reading file
     if (c == -1)
@@ -25,10 +25,16 @@ struct tok *scan()
 
     switch (c)
     {
-        case '+': g_tok.type = T_PLUS;  return &g_tok;
-        case ';': g_tok.type = T_SEMI;  return &g_tok;
-        case ':': g_tok.type = T_COLON; return &g_tok;
-        case '=': g_tok.type = T_EQ;    return &g_tok;
+        case '+': g_tok.type = T_PLUS;   return &g_tok;
+        case ';': g_tok.type = T_SEMI;   return &g_tok;
+        case ':': g_tok.type = T_COLON;  return &g_tok;
+        case '=': g_tok.type = T_EQ;     return &g_tok;
+        case '(': g_tok.type = T_LPAREN; return &g_tok;
+        case ')': g_tok.type = T_RPAREN; return &g_tok;
+        case ',': g_tok.type = T_COMMA;  return &g_tok;
+        case '*': g_tok.type = T_STAR;   return &g_tok;
+        case '{': g_tok.type = T_LBRACE; return &g_tok;
+        case '}': g_tok.type = T_RBRACE; return &g_tok;
     }
 
     if (isdigit(c))
@@ -56,7 +62,8 @@ struct tok *scan()
 
         ungetc(c, g_in); // Last character was not part of identifier
 
-        if (!strcmp("let", buf)) g_tok.type = T_LET;
+             if (!strcmp("let", buf)) g_tok.type = T_LET;
+        else if (!strcmp("fn", buf))  g_tok.type = T_FN;
         else if (!strcmp("u32", buf)) g_tok.type = T_U32;
         else
         {

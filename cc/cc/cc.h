@@ -14,8 +14,12 @@ struct type
 {
     int sign; // Signed/unsigned
     int size; // 0, 1, 2, 4, 8, etc.
+    int func; // Function type
+    int ptr;  // Number of pointers
 
     //int arrlen; // Array length (for computing size of entire array)
+
+    struct type *param, *next; // Linked list of function parameters
 };
 
 // AST types
@@ -47,7 +51,7 @@ struct ast
 
     struct type vtype; // Variable type
 
-    struct ast *next, *prev; // Next and previou statements (linked list for block of statements)
+    struct ast *next, *prev; // Next and previous statements (linked list for block of statements)
 };
 
 // Token types
@@ -63,6 +67,12 @@ enum
     T_COLON,
     T_U32,
     T_EQ,
+    T_LPAREN,
+    T_RPAREN,
+    T_COMMA,
+    T_STAR,
+    T_LBRACE,
+    T_RBRACE,
     T_EOF
 };
 

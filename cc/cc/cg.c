@@ -71,13 +71,23 @@ int cgcmpd(struct ast *ast)
     return NOREG;
 }
 
+// Generate declaration
+int cgdecl(struct ast *ast)
+{
+    if (ast->vtype.func && !ast->vtype.ptr)
+    {
+        cg(ast->left);
+    }
+}
+
 int cg(struct ast *ast)
 {
     switch (ast->type)
     {
         case A_BINOP: return cgbinop(ast);
         case A_ILIT:  return cgilit(ast);
-        case A_CMPD: return cgcmpd(ast);
+        case A_CMPD:  return cgcmpd(ast);
+        case A_DECL:  return cgdecl(ast);
     }
 
     return NOREG;
