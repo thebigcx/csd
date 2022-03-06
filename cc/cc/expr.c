@@ -13,6 +13,11 @@ struct ast *primary()
             ast->type = A_ILIT;
             ast->iv   = g_tok.iv;
             break;
+        
+        case T_IDENT:
+            ast->type = A_IDENT;
+            ast->sv = g_tok.sv;
+            break;
     }
 
     scan();
@@ -32,7 +37,8 @@ struct ast *arithop()
 
     switch (g_tok.type)
     {
-        case T_PLUS: ast->op = OP_ADD; break;
+        case T_PLUS: ast->op = OP_ADD;    break;
+        case T_EQ:   ast->op = OP_ASSIGN; break;
     }
 
     scan();
@@ -47,9 +53,9 @@ struct ast *expr()
 
     struct ast *ast = NEW(struct ast);
 
-    ast->right = left;
+    ast->left  = left;
     ast->mid   = arithop();
-    ast->left  = expr();
+    ast->right = expr();
 
     return ast;
 }

@@ -41,11 +41,34 @@ int cgadd(int r1, int r2)
     return r1;
 }
 
+int cgassign(struct ast *left, int r)
+{
+    fprintf(g_out, "\tmov %s, %s\n", left->sv, regs[r]);
+    return r;
+}
+
 int cgbinop(struct ast *ast)
 {
-    int r1 = cg(ast->left);
+    int r1;
+    if (ast->mid->op != OP_ASSIGN) // Assignments need not generate LHS
+        r1 = cg(ast->left);
+    
     int r2 = cg(ast->right);
-    return cgadd(r1, r2);
+
+    switch (ast->mid->op)
+    {
+        case OP_ADD: return cgadd(r1, r2);
+        case OP_ASSIGN: return cgassign(ast->left, r2);
+    }
+}
+
+// Generate code for compound statement
+int cgcmpd(struct ast *ast)
+{
+    for (struct ast *node = ast->next; node; node = node->next)
+        discard(cg(node));
+
+    return NOREG;
 }
 
 int cg(struct ast *ast)
@@ -54,5 +77,8 @@ int cg(struct ast *ast)
     {
         case A_BINOP: return cgbinop(ast);
         case A_ILIT:  return cgilit(ast);
+        case A_CMPD: return cgcmpd(ast);
     }
+
+    return NOREG;
 }

@@ -24,13 +24,16 @@ enum
     A_BINOP,
     A_ILIT,
     A_OP,
-    A_DECL
+    A_DECL,
+    A_CMPD, // Compound statement
+    A_IDENT
 };
 
 // Operator types
 enum
 {
-    OP_ADD
+    OP_ADD,
+    OP_ASSIGN
 };
 
 // Astract Syntax Tree node
@@ -43,6 +46,8 @@ struct ast
     char *sv; // String value
 
     struct type vtype; // Variable type
+
+    struct ast *next, *prev; // Next and previou statements (linked list for block of statements)
 };
 
 // Token types
@@ -57,6 +62,7 @@ enum
     T_IDENT,
     T_COLON,
     T_U32,
+    T_EQ,
     T_EOF
 };
 
@@ -78,6 +84,7 @@ struct ast *expr(); // Parse expression
 
 // stmt.c
 struct ast *stmt(); // Parse statement
+struct ast *cmpdstmt(); // Parse compound statement
 
 // cg.c
 int cg(struct ast *); // Generate code

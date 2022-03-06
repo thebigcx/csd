@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
-    struct ast *ast = stmt();
+    struct ast *ast = cmpdstmt();
     cg(ast);
 
     fclose(g_in);
