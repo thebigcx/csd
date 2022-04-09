@@ -75,8 +75,12 @@ enum
     T_STAR,
     T_LBRACE,
     T_RBRACE,
-    T_EOF
+    T_EOF,
+    TOKCNT
 };
+
+extern const char *tokstrs[TOKCNT];
+#define TOKSTR(t) (tokstrs[t])
 
 // Token
 struct tok
@@ -100,7 +104,7 @@ struct sym
 
 // scan.c
 struct tok *scan(); // Scan next token
-int qualif(); // Current token qualifier?
+int qualif(); // Is current token qualifier?
 struct tok expect(int t); // Expect a token
 
 // expr.c
@@ -115,6 +119,7 @@ int cg(struct ast *); // Generate code
 
 // type.c
 struct type type(); // Parse type
+unsigned int typesize(struct type *t);
 
 // sym.c
 void setscope(struct sym **symtab); // Set symbol table scope

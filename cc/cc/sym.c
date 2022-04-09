@@ -27,13 +27,15 @@ struct sym *addsym(const char *name, struct type type)
 {
     // Find last symbol in table
     struct sym **last = s_symtab;
-    for (; *last && (*last)->next; last = &(*last)->next);
+    for (; *last; last = &(*last)->next);
 
     // Create new symbol
     *last = NEW(struct sym);
 
     (*last)->name = strdup(name);
     (*last)->type = type;
+
+    (*s_symtab)->stckoff += typesize(&type);
 
     return *last;
 }

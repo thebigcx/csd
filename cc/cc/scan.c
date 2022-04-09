@@ -3,6 +3,26 @@
 #include <ctype.h>
 #include <string.h>
 
+const char *tokstrs[] = {
+    [T_SEMI] = ";",
+    [T_ILIT] = "int literal",
+    [T_PLUS] = "+",
+    [T_PUB] = "pub",
+    [T_FN] = "fn",
+    [T_LET] = "let",
+    [T_IDENT] = "identifier",
+    [T_COLON] = ":",
+    [T_U32] = "u32",
+    [T_EQ] = "=",
+    [T_LPAREN] = "(",
+    [T_RPAREN] = ")",
+    [T_COMMA] = ",",
+    [T_STAR] = "*",
+    [T_LBRACE] = "{",
+    [T_RBRACE] = "}",
+    [T_EOF] = "EOF"
+};
+
 // Valid character in identifier
 int validid(char c)
 {
@@ -84,7 +104,7 @@ struct tok expect(int t)
 {
     if (g_tok.type != t)
     {
-        printf("Expectation %d, got %d\n", t, g_tok.type);
+        printf("Expected %s, got %s\n", TOKSTR(t), TOKSTR(g_tok.type));
         // Crash
     }
 

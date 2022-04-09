@@ -34,6 +34,12 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+int cgident(struct ast *ast)
+{
+    int r = ralloc();
+    return r;
+}
+
 int cgadd(int r1, int r2)
 {
     fprintf(g_out, "\tadd %s, %s\n", regs[r1], regs[r2]);
@@ -65,9 +71,13 @@ int cgbinop(struct ast *ast)
 // Generate code for compound statement
 int cgcmpd(struct ast *ast)
 {
+    struct sym **parent = getscope();
+    setscope(&ast->symtab);
+
     for (struct ast *node = ast->next; node; node = node->next)
         discard(cg(node));
 
+    setscope(parent);
     return NOREG;
 }
 
@@ -79,6 +89,7 @@ int cgdecl(struct ast *ast)
         fprintf(g_out, "%s:\n", ast->sv);
         fprintf(g_out, "\tpush %%rbp\n");
         fprintf(g_out, "\tmov %%rsp, %%rbp\n");
+        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab->stckoff);
         
         cg(ast->left);
                 
@@ -95,6 +106,7 @@ int cg(struct ast *ast)
         case A_ILIT:  return cgilit(ast);
         case A_CMPD:  return cgcmpd(ast);
         case A_DECL:  return cgdecl(ast);
+        case A_IDENT: return cgident(ast);
     }
 
     return NOREG;

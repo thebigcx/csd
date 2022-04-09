@@ -41,10 +41,15 @@ struct type type()
     {
         switch (g_tok.type)
         {
-            case T_U32: t.sign = 0; t.size = 32; break;
+            case T_U32: t.sign = 0; t.size = 4; break;
         }
         scan();
     }
 
     return t;
+}
+
+unsigned int typesize(struct type *t)
+{
+    return t->size;
 }
