@@ -26,6 +26,7 @@ struct type
 enum
 {
     A_BINOP,
+    A_UNARY,
     A_ILIT,
     A_OP,
     A_DECL,
@@ -37,7 +38,8 @@ enum
 enum
 {
     OP_ADD,
-    OP_ASSIGN
+    OP_ASSIGN,
+    OP_DEREF
 };
 
 // Astract Syntax Tree node
@@ -97,6 +99,7 @@ struct sym
     struct type type;
     int global; // Global/local
     int stckoff; // Offset to stack pointer
+    int stcksz; // For symbol table, current stack size
 
     struct sym *next; // Next symbol in linked list
     //struct sym *parent; // Parent symbol table

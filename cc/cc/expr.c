@@ -2,6 +2,49 @@
 
 #include <stdlib.h>
 
+struct ast *suffix();
+struct ast *primary();
+
+// Prefix of primary expression (*, &, etc.). Takes precedence over suffix().
+struct ast *prefix()
+{
+    struct ast *ast = NULL;
+
+    switch (g_tok.type)
+    {
+        case T_STAR:
+            ast = NEW(struct ast);
+            ast->type = A_UNARY;
+            ast->op = OP_DEREF;
+
+            scan();
+            ast->left = prefix();
+
+            break;
+
+        default:
+            ast = suffix();
+            break;
+    }
+
+    return ast;
+}
+
+// Suffix of primary expression ([], (), etc.). Takes precedence over primary().
+struct ast *suffix()
+{
+    struct ast *ast = NULL;
+
+    switch (g_tok.type)
+    {
+        default:
+            ast = primary();
+            break;
+    }
+
+    return ast;
+}
+
 // Primary expression, e.g. int literal, identifier
 struct ast *primary()
 {
@@ -50,7 +93,7 @@ struct ast *arithop()
 
 struct ast *expr()
 {
-    struct ast *left = primary();
+    struct ast *left = prefix();
     if (term())
         return left;
 

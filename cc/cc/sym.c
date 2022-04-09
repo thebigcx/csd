@@ -34,8 +34,7 @@ struct sym *addsym(const char *name, struct type type)
 
     (*last)->name = strdup(name);
     (*last)->type = type;
-
-    (*s_symtab)->stckoff += typesize(&type);
+    (*last)->stckoff = (*s_symtab)->stcksz += typesize(&type);
 
     return *last;
 }

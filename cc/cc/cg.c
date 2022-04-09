@@ -34,9 +34,23 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+// Generate the code for a variable read/write e.g. [rsp - 10] or [label]
+void cgvarloc(struct sym *sym)
+{
+    if (sym->global)
+        fprintf(g_out, "[%s]", sym->name);
+    else
+        fprintf(g_out, "[rsp - %d]", sym->stckoff);
+}
+
 int cgident(struct ast *ast)
 {
     int r = ralloc();
+
+    fprintf(g_out, "\tmov %s, ", regs[r]);
+    cgvarloc(lookup(ast->sv));
+    fprintf(g_out, "\n");
+
     return r;
 }
 
@@ -47,9 +61,42 @@ int cgadd(int r1, int r2)
     return r1;
 }
 
+// Dereference operator.
+int cgderef(struct ast *ast)
+{
+    int r1 = cg(ast);
+    int r2 = ralloc();
+    
+    fprintf(g_out, "\tmov %s, [%s]\n", regs[r2], regs[r1]);
+
+    rfree(r1);
+    return r2;
+}
+
+int cgunary(struct ast *ast)
+{
+    switch (ast->op)
+    {
+        case OP_DEREF: return cgderef(ast->left);
+    }
+}
+
 int cgassign(struct ast *left, int r)
 {
-    fprintf(g_out, "\tmov %s, %s\n", left->sv, regs[r]);
+    // Dereference
+    if (left->type == A_UNARY)
+    {
+        int adr = cg(left->left);
+        fprintf(g_out, "\tmov [%s], %s\n", regs[adr], regs[r]);
+        rfree(adr);
+    }
+    else
+    {
+        fprintf(g_out, "\tmov ");
+        cgvarloc(lookup(left->sv));
+        fprintf(g_out, ", %s\n", regs[r]);
+    }
+
     return r;
 }
 
@@ -89,7 +136,7 @@ int cgdecl(struct ast *ast)
         fprintf(g_out, "%s:\n", ast->sv);
         fprintf(g_out, "\tpush %%rbp\n");
         fprintf(g_out, "\tmov %%rsp, %%rbp\n");
-        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab->stckoff);
+        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab->stcksz);
         
         cg(ast->left);
                 
@@ -107,6 +154,7 @@ int cg(struct ast *ast)
         case A_CMPD:  return cgcmpd(ast);
         case A_DECL:  return cgdecl(ast);
         case A_IDENT: return cgident(ast);
+        case A_UNARY: return cgunary(ast);
     }
 
     return NOREG;
