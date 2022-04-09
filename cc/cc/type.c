@@ -51,5 +51,6 @@ struct type type()
 
 unsigned int typesize(struct type *t)
 {
+    if (t->ptr) return 8;
     return t->size;
 }

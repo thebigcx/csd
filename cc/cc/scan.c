@@ -20,6 +20,7 @@ const char *tokstrs[] = {
     [T_STAR] = "*",
     [T_LBRACE] = "{",
     [T_RBRACE] = "}",
+    [T_IF] = "if",
     [T_EOF] = "EOF"
 };
 
@@ -85,6 +86,7 @@ struct tok *scan()
              if (!strcmp("let", buf)) g_tok.type = T_LET;
         else if (!strcmp("fn", buf))  g_tok.type = T_FN;
         else if (!strcmp("u32", buf)) g_tok.type = T_U32;
+        else if (!strcmp("if", buf))  g_tok.type = T_IF;
         else
         {
             g_tok.type = T_IDENT;

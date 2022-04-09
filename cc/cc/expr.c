@@ -5,7 +5,7 @@
 struct ast *suffix();
 struct ast *primary();
 
-// Prefix of primary expression (*, &, etc.). Takes precedence over suffix().
+// Prefix of primary expression (*, &, etc.). Takes precedence over primary().
 struct ast *prefix()
 {
     struct ast *ast = NULL;
@@ -30,7 +30,7 @@ struct ast *prefix()
     return ast;
 }
 
-// Suffix of primary expression ([], (), etc.). Takes precedence over primary().
+// Suffix of primary expression ([], (), etc.). Takes precedence over prefix().
 struct ast *suffix()
 {
     struct ast *ast = NULL;
@@ -72,7 +72,7 @@ struct ast *primary()
 
 int term()
 {
-    return g_tok.type == T_SEMI;
+    return g_tok.type == T_SEMI || g_tok.type == T_RPAREN;
 }
 
 // Arithmetic operator, e.g. + - * /

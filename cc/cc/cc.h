@@ -31,6 +31,7 @@ enum
     A_OP,
     A_DECL,
     A_CMPD, // Compound statement
+    A_IF,
     A_IDENT
 };
 
@@ -40,6 +41,24 @@ enum
     OP_ADD,
     OP_ASSIGN,
     OP_DEREF
+};
+
+// Symbol
+struct sym
+{
+    const char *name;
+    struct type type;
+    int global; // Global/local
+    int stckoff; // Offset to stack pointer
+    
+    struct sym *next; // Next symbol in linked list
+};
+
+struct symtab
+{
+    struct sym *head; // Head of linked-list
+    int stcksz; // Current stack size
+    struct symtab *parent; // Parent symbol table
 };
 
 // Astract Syntax Tree node
@@ -53,7 +72,7 @@ struct ast
 
     struct type vtype; // Variable type
 
-    struct sym *symtab; // Symbol table
+    struct symtab symtab; // Symbol table
 
     struct ast *next, *prev; // Next and previous statements (linked list for block of statements)
 };
@@ -77,6 +96,7 @@ enum
     T_STAR,
     T_LBRACE,
     T_RBRACE,
+    T_IF,
     T_EOF,
     TOKCNT
 };
@@ -90,19 +110,6 @@ struct tok
     int type;
     char *sv; // String
     uint64_t iv; // Integer
-};
-
-// Symbol
-struct sym
-{
-    const char *name;
-    struct type type;
-    int global; // Global/local
-    int stckoff; // Offset to stack pointer
-    int stcksz; // For symbol table, current stack size
-
-    struct sym *next; // Next symbol in linked list
-    //struct sym *parent; // Parent symbol table
 };
 
 // scan.c
@@ -125,8 +132,8 @@ struct type type(); // Parse type
 unsigned int typesize(struct type *t);
 
 // sym.c
-void setscope(struct sym **symtab); // Set symbol table scope
-struct sym **getscope(); // Get symbol table scope
+void setscope(struct symtab *symtab); // Set symbol table scope
+struct symtab *getscope(); // Get symbol table scope
 
 struct sym *lookup(const char *name); // Look up symbol in current scope
 struct sym *addsym(const char *name, struct type type); // Add symbol to symbol table

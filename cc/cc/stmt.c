@@ -27,11 +27,32 @@ struct ast *decl()
     return ast;
 }
 
+struct ast *ifstmt()
+{
+    struct ast *ast = NEW(struct ast);
+    ast->type = A_IF;
+
+    expect(T_IF);
+    expect(T_LPAREN);
+
+    ast->left = expr();
+
+    expect(T_RPAREN);
+
+    // Parse code block for true case
+    expect(T_LBRACE);
+    ast->mid = cmpdstmt();
+    expect(T_RBRACE);
+
+    return ast;
+}
+
 struct ast *stmt()
 {
     switch (g_tok.type)
     {
         case T_LET: return decl();
+        case T_IF:  return ifstmt();
         default: return expr();
     }
 }
@@ -42,7 +63,7 @@ struct ast *cmpdstmt()
     struct ast *ast = NEW(struct ast), *ret = ast;
     ast->type = A_CMPD;
 
-    struct sym **parent = getscope();
+    struct symtab *parent = ast->symtab.parent = getscope();
     setscope(&ast->symtab);
 
     while (g_tok.type != T_EOF && g_tok.type != T_RBRACE)

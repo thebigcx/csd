@@ -34,6 +34,13 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+// Generate a new label unique in this translation unit
+int label()
+{
+    static int l = 0;
+    return l++;
+}
+
 // Generate the code for a variable read/write e.g. [rsp - 10] or [label]
 void cgvarloc(struct sym *sym)
 {
@@ -118,13 +125,30 @@ int cgbinop(struct ast *ast)
 // Generate code for compound statement
 int cgcmpd(struct ast *ast)
 {
-    struct sym **parent = getscope();
+    struct symtab *parent = getscope();
     setscope(&ast->symtab);
 
     for (struct ast *node = ast->next; node; node = node->next)
         discard(cg(node));
 
     setscope(parent);
+    return NOREG;
+}
+
+// Generate if statement code
+int cgif(struct ast *ast)
+{
+    int l1 = label();
+
+    int r = cg(ast->left); // Condition
+
+    fprintf(g_out, "\ttest %s, %s\n", regs[r], regs[r]);
+    fprintf(g_out, "\tjz L%d\n", l1);
+
+    discard(cg(ast->mid));
+
+    fprintf(g_out, "L%d:\n", l1);
+
     return NOREG;
 }
 
@@ -136,13 +160,15 @@ int cgdecl(struct ast *ast)
         fprintf(g_out, "%s:\n", ast->sv);
         fprintf(g_out, "\tpush %%rbp\n");
         fprintf(g_out, "\tmov %%rsp, %%rbp\n");
-        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab->stcksz);
+        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab.stcksz);
         
         cg(ast->left);
                 
         fprintf(g_out, "\tleave\n");
         fprintf(g_out, "\tret\n");
     }
+
+    return NOREG;
 }
 
 int cg(struct ast *ast)
@@ -155,6 +181,7 @@ int cg(struct ast *ast)
         case A_DECL:  return cgdecl(ast);
         case A_IDENT: return cgident(ast);
         case A_UNARY: return cgunary(ast);
+        case A_IF:    return cgif(ast);
     }
 
     return NOREG;
