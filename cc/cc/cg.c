@@ -68,6 +68,21 @@ int cgadd(int r1, int r2)
     return r1;
 }
 
+int cgcmp(int r1, int r2, int op)
+{
+    int r3 = ralloc();
+    fprintf(g_out, "\tcmp %s, %s\n", regs[r1], regs[r2]);
+
+    switch (op)
+    {
+        case OP_LT: fprintf(g_out, "\tsetl %s\n", regs[r3]); break;
+    }
+
+    rfree(r1);
+    rfree(r2);
+    return r3;
+}
+
 // Dereference operator.
 int cgderef(struct ast *ast)
 {
@@ -119,6 +134,9 @@ int cgbinop(struct ast *ast)
     {
         case OP_ADD: return cgadd(r1, r2);
         case OP_ASSIGN: return cgassign(ast->left, r2);
+        
+        case OP_LT:
+            return cgcmp(r1, r2, ast->mid->op);
     }
 }
 
@@ -128,8 +146,18 @@ int cgcmpd(struct ast *ast)
     struct symtab *parent = getscope();
     setscope(&ast->symtab);
 
+    if (ast->symtab.stcksz)
+    {
+        fprintf(g_out, "\tpush %%rbp\n");
+        fprintf(g_out, "\tmov %%rsp, %%rbp\n");
+        fprintf(g_out, "\tsub %%rsp, %d\n", ast->symtab.stcksz);
+    } 
+    
     for (struct ast *node = ast->next; node; node = node->next)
         discard(cg(node));
+
+    if (ast->symtab.stcksz)            
+        fprintf(g_out, "\tleave\n");
 
     setscope(parent);
     return NOREG;
@@ -158,13 +186,7 @@ int cgdecl(struct ast *ast)
     if (ast->vtype.func && !ast->vtype.ptr)
     {
         fprintf(g_out, "%s:\n", ast->sv);
-        fprintf(g_out, "\tpush %%rbp\n");
-        fprintf(g_out, "\tmov %%rsp, %%rbp\n");
-        fprintf(g_out, "\tsub %%rsp, %d\n", ast->left->symtab.stcksz);
-        
         cg(ast->left);
-                
-        fprintf(g_out, "\tleave\n");
         fprintf(g_out, "\tret\n");
     }
 

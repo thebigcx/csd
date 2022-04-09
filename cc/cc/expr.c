@@ -85,6 +85,7 @@ struct ast *arithop()
     {
         case T_PLUS: ast->op = OP_ADD;    break;
         case T_EQ:   ast->op = OP_ASSIGN; break;
+        case T_LT:   ast->op = OP_LT;     break;
     }
 
     scan();

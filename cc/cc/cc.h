@@ -40,7 +40,8 @@ enum
 {
     OP_ADD,
     OP_ASSIGN,
-    OP_DEREF
+    OP_DEREF,
+    OP_LT,
 };
 
 // Symbol
@@ -98,6 +99,7 @@ enum
     T_RBRACE,
     T_IF,
     T_EOF,
+    T_LT,
     TOKCNT
 };
 
