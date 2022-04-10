@@ -46,12 +46,15 @@ enum
     OP_LT,
 };
 
+#define S_PUB  (1 << 0) // Public
+#define S_STCK (1 << 1) // Stack-allocated
+
 // Symbol
 struct sym
 {
     const char *name;
     struct type type;
-    int global; // Global/local
+    int flags; // Flags (see above)
     int stckoff; // Offset to stack pointer
     
     struct sym *next; // Next symbol in linked list

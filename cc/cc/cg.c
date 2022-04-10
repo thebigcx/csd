@@ -48,10 +48,10 @@ int label()
 // Generate the code for a variable read/write e.g. [rsp - 10] or [label]
 void cgvarloc(struct sym *sym)
 {
-    if (sym->global)
-        fprintf(g_out, "[%s]", sym->name);
-    else
+    if (sym->flags & S_STCK)
         fprintf(g_out, "[rsp - %d]", sym->stckoff);
+    else
+        fprintf(g_out, "[%s]", sym->name);
 }
 
 int cgident(struct ast *ast)
@@ -138,11 +138,9 @@ int cgbinop(struct ast *ast)
 
     switch (ast->mid->op)
     {
-        case OP_ADD: return cgadd(r1, r2);
+        case OP_ADD:    return cgadd(r1, r2);
         case OP_ASSIGN: return cgassign(ast->left, r2);
-        
-        case OP_LT:
-            return cgcmp(r1, r2, ast->mid->op);
+        case OP_LT:     return cgcmp(r1, r2, ast->mid->op);
     }
 }
 
@@ -202,6 +200,11 @@ int cgdecl(struct ast *ast)
         cg(ast->left);
 
         fprintf(g_out, "\tret\n");
+    }
+    else if (!(lookup(ast->sv)->flags & S_STCK))
+    {
+        fprintf(g_out, "%s:\n", ast->sv);
+        fprintf(g_out, "\ttimes %d db 0\n", typesize(&ast->vtype));
     }
 
     return NOREG;
