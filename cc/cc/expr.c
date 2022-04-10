@@ -23,26 +23,34 @@ struct ast *prefix()
             break;
 
         default:
-            ast = suffix();
+            ast = suffix(primary());
             break;
     }
 
     return ast;
 }
 
-// Suffix of primary expression ([], (), etc.). Takes precedence over prefix().
-struct ast *suffix()
+// Call expression
+struct ast *callexpr(struct ast *left)
 {
-    struct ast *ast = NULL;
+    expect(T_LPAREN);
+    expect(T_RPAREN);
 
-    switch (g_tok.type)
-    {
-        default:
-            ast = primary();
-            break;
-    }
+    struct ast *ast = NEW(struct ast);
+    ast->type = A_CALL;
+    ast->left = left;
 
     return ast;
+}
+
+// Suffix of primary expression ([], (), etc.). Takes precedence over prefix().
+struct ast *suffix(struct ast *left)
+{
+    switch (g_tok.type)
+    {
+        case T_LPAREN: return callexpr(left);
+        default: return left;
+    }
 }
 
 // Primary expression, e.g. int literal, identifier

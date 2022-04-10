@@ -32,7 +32,9 @@ enum
     A_DECL,
     A_CMPD, // Compound statement
     A_IF,
-    A_IDENT
+    A_IDENT,
+    A_CALL,
+    A_RET,
 };
 
 // Operator types
@@ -75,7 +77,7 @@ struct ast
 
     struct symtab symtab; // Symbol table
 
-    struct ast *next, *prev; // Next and previous statements (linked list for block of statements)
+    struct ast *next, *prev; // Next and previous statements (linked list for block of statements or parameters)
 };
 
 // Token types
@@ -100,6 +102,7 @@ enum
     T_IF,
     T_EOF,
     T_LT,
+    T_RET,
     TOKCNT
 };
 

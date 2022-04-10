@@ -1,11 +1,15 @@
 #include "cc.h"
 
 const char *regs[] = { "rax", "rbx", "rcx", "rdx" };
+const char *regsl[] = { "al", "bl", "cl", "dl" }; // Lower 8-bit registers
 
 #define REGCNT (sizeof(regs) / sizeof(regs[0]))
 #define NOREG (-1)
 
 static int s_reglst[REGCNT] = { 0 };
+
+// Current function node
+static struct ast *s_currfn = NULL;
 
 // Allocate a general purpose register
 int ralloc()
@@ -75,8 +79,10 @@ int cgcmp(int r1, int r2, int op)
 
     switch (op)
     {
-        case OP_LT: fprintf(g_out, "\tsetl %s\n", regs[r3]); break;
+        case OP_LT: fprintf(g_out, "\tsetl %s\n", regsl[r3]); break;
     }
+
+    fprintf(g_out, "\tmovzx %s, %s\n", regs[r3], regsl[r3]);
 
     rfree(r1);
     rfree(r2);
@@ -148,13 +154,17 @@ int cgcmpd(struct ast *ast)
 
     if (ast->symtab.stcksz)
     {
-        fprintf(g_out, "\tpush %%rbp\n");
-        fprintf(g_out, "\tmov %%rsp, %%rbp\n");
-        fprintf(g_out, "\tsub %%rsp, %d\n", ast->symtab.stcksz);
+        fprintf(g_out, "\tpush rbp\n");
+        fprintf(g_out, "\tmov rbp, rsp\n");
+        fprintf(g_out, "\tsub rsp, %d\n", ast->symtab.stcksz);
     } 
     
     for (struct ast *node = ast->next; node; node = node->next)
         discard(cg(node));
+
+    // End label for a function definition
+    if (s_currfn && s_currfn->left == ast)
+        fprintf(g_out, "L%d:\n", s_currfn->iv);
 
     if (ast->symtab.stcksz)            
         fprintf(g_out, "\tleave\n");
@@ -185,11 +195,45 @@ int cgdecl(struct ast *ast)
 {
     if (ast->vtype.func && !ast->vtype.ptr)
     {
+        s_currfn = ast;
+        ast->iv = label(); // End label (for return statement)
+
         fprintf(g_out, "%s:\n", ast->sv);
         cg(ast->left);
+
         fprintf(g_out, "\tret\n");
     }
 
+    return NOREG;
+}
+
+int cgcall(struct ast *ast)
+{
+    int r1 = ralloc(); // Return value
+
+    // Preserve RAX register
+    fprintf(g_out, "\tpush rax\n");
+
+    int r2 = cg(ast->left); // Address to be called
+    fprintf(g_out, "\tcall [%s]\n", regs[r2]);
+
+    // Get return value, restore RAX
+    fprintf(g_out, "\tmov %s, rax\n", regs[r1]);
+    fprintf(g_out, "\tpop rax\n");
+
+    rfree(r2);
+    return r1;
+}
+
+// Generate return code
+int cgret(struct ast *ast)
+{
+    int r = cg(ast->left);
+
+    fprintf(g_out, "\tmov rax, %s\n", regs[r]);
+    fprintf(g_out, "\tjmp L%d\n", s_currfn->iv);
+
+    rfree(r);
     return NOREG;
 }
 
@@ -204,6 +248,8 @@ int cg(struct ast *ast)
         case A_IDENT: return cgident(ast);
         case A_UNARY: return cgunary(ast);
         case A_IF:    return cgif(ast);
+        case A_CALL:  return cgcall(ast);
+        case A_RET:   return cgret(ast);
     }
 
     return NOREG;

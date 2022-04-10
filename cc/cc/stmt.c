@@ -47,12 +47,23 @@ struct ast *ifstmt()
     return ast;
 }
 
-struct ast *stmt()
+struct ast *retstmt()
 {
+    expect(T_RET);
+
+    struct ast *ast = NEW(struct ast);
+    ast->type = A_RET;
+    ast->left = expr();
+    return ast;
+}
+
+struct ast *stmt()
+{   
     switch (g_tok.type)
     {
         case T_LET: return decl();
         case T_IF:  return ifstmt();
+        case T_RET: return retstmt();
         default: return expr();
     }
 }
