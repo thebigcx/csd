@@ -4,29 +4,29 @@
 #include <string.h>
 
 const char *tokstrs[] = {
-    [T_SEMI] = ";",
-    [T_ILIT] = "<int literal>",
-    [T_PLUS] = "+",
-    [T_PUB] = "pub",
-    [T_FN] = "fn",
-    [T_LET] = "let",
-    [T_IDENT] = "<identifier>",
-    [T_COLON] = ":",
-    [T_U32] = "u32",
-    [T_EQ] = "=",
+    [T_SEMI]   = ";",
+    [T_ILIT]   = "<int literal>",
+    [T_PLUS]   = "+",
+    [T_PUB]    = "pub",
+    [T_FN]     = "fn",
+    [T_LET]    = "let",
+    [T_IDENT]  = "<identifier>",
+    [T_COLON]  = ":",
+    [T_U32]    = "u32",
+    [T_EQ]     = "=",
     [T_LPAREN] = "(",
     [T_RPAREN] = ")",
-    [T_COMMA] = ",",
-    [T_STAR] = "*",
+    [T_COMMA]  = ",",
+    [T_STAR]   = "*",
     [T_LBRACE] = "{",
     [T_RBRACE] = "}",
-    [T_IF] = "if",
-    [T_LT] = "<",
-    [T_RET] = "ret",
-    [T_AMP] = "&",
+    [T_IF]     = "if",
+    [T_LT]     = "<",
+    [T_RET]    = "ret",
+    [T_AMP]    = "&",
     [T_EXTERN] = "extern",
-    [T_ARROW] = "->",
-    [T_EOF] = "EOF"
+    [T_ARROW]  = "->",
+    [T_EOF]    = "<EOF>"
 };
 
 // Valid character in identifier
@@ -37,7 +37,7 @@ int validid(char c)
 
 struct tok *scan()
 {
-    char buf[32];
+    char buf[32] = { 0 };
 
     char c;
     do c = fgetc(g_in); while (c != -1 && isspace(c));
@@ -47,22 +47,6 @@ struct tok *scan()
     {
         g_tok.type = T_EOF;
         return &g_tok;
-    }
-
-    switch (c)
-    {
-        case '+': g_tok.type = T_PLUS;   return &g_tok;
-        case ';': g_tok.type = T_SEMI;   return &g_tok;
-        case ':': g_tok.type = T_COLON;  return &g_tok;
-        case '=': g_tok.type = T_EQ;     return &g_tok;
-        case '(': g_tok.type = T_LPAREN; return &g_tok;
-        case ')': g_tok.type = T_RPAREN; return &g_tok;
-        case ',': g_tok.type = T_COMMA;  return &g_tok;
-        case '*': g_tok.type = T_STAR;   return &g_tok;
-        case '{': g_tok.type = T_LBRACE; return &g_tok;
-        case '}': g_tok.type = T_RBRACE; return &g_tok;
-        case '<': g_tok.type = T_LT;     return &g_tok;
-        case '&': g_tok.type = T_AMP;    return &g_tok;
     }
 
     if (isdigit(c))
@@ -102,6 +86,28 @@ struct tok *scan()
             g_tok.type = T_IDENT;
             g_tok.sv = strdup(buf);
         }
+    }
+    else
+    {
+        // Nice algorithm to find the longest matching token string.
+        // For e.g.: - will be T_MINUS, whereas -> will be T_ARROW
+
+        int n = 0, t = -1;
+
+    nextch:
+        buf[n++] = c;
+        for (int i = 0; i < TOKCNT; i++)
+        {
+            if (!strncmp(buf, tokstrs[i], n))
+            {
+                t = i;
+                c = fgetc(g_in);
+                goto nextch;
+            }
+        }
+
+        ungetc(c, g_in);
+        g_tok.type = t;
     }
 
     return &g_tok;
