@@ -67,12 +67,20 @@ struct ast *prefix()
 // Call expression
 struct ast *callexpr(struct ast *left)
 {
-    expect(T_LPAREN);
-    expect(T_RPAREN);
-
     struct ast *ast = NEW(struct ast);
     ast->type = A_CALL;
     ast->left = left;
+
+    expect(T_LPAREN);
+    
+    struct ast **next = &ast->mid;
+    while (g_tok.type != T_RPAREN)
+    {
+        *next = expr();
+        next = &(*next)->next;
+    }
+
+    expect(T_RPAREN);
 
     return ast;
 }
@@ -114,7 +122,7 @@ struct ast *primary()
 
 int term()
 {
-    return g_tok.type == T_SEMI || g_tok.type == T_RPAREN;
+    return g_tok.type == T_SEMI || g_tok.type == T_RPAREN || g_tok.type == T_COMMA;
 }
 
 // Arithmetic operator, e.g. + - * /

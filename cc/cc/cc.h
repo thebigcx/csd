@@ -110,6 +110,7 @@ enum
     T_RET,
     T_EXTERN,
     T_AMP,
+    T_ARROW,
     TOKCNT
 };
 

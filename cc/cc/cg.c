@@ -49,9 +49,11 @@ int label()
 void cgvarloc(struct sym *sym)
 {
     if (sym->flags & S_STCK)
-        fprintf(g_out, "[rsp - %d]", sym->stckoff);
-    else
-        fprintf(g_out, "[%s]", sym->name);
+    {
+        if (sym->stckoff < 0) fprintf(g_out, "[rsp - %d]", -sym->stckoff);
+        else                  fprintf(g_out, "[rsp + %d]",  sym->stckoff);
+    }
+    else fprintf(g_out, "[%s]", sym->name);
 }
 
 int cgident(struct ast *ast)
@@ -241,6 +243,14 @@ int cgcall(struct ast *ast)
 
     // Preserve RAX register
     fprintf(g_out, "\tpush rax\n");
+
+    // Push the parameters onto the stack
+    for (struct ast *par = ast->mid; par; par = par->next)
+    {
+        int r = cg(par);
+        fprintf(g_out, "\tpush %s\n", regs[r]);
+        rfree(r);
+    }
 
     int r2 = cg(ast->left); // Address to be called
     fprintf(g_out, "\tcall [%s]\n", regs[r2]);

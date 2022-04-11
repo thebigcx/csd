@@ -28,7 +28,7 @@ struct ast *decl()
     ast->vtype = type();
 
     // Parse function body if necessary
-    if (ast->vtype.func && !ast->vtype.ptr)
+    if (ast->vtype.func && !ast->vtype.ptr && !(flags & S_EXT))
     {
         expect(T_LBRACE);
         ast->left = cmpdstmt();

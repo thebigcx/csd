@@ -48,7 +48,7 @@ struct sym *addsym(const char *name, struct type type, int flags)
     if (s_symtab->parent)
     {
         (*last)->flags |= S_STCK;
-        (*last)->stckoff = s_symtab->stcksz += typesize(&type);
+        (*last)->stckoff = -(s_symtab->stcksz += typesize(&type));
     }
 
     return *last;

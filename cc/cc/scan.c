@@ -5,12 +5,12 @@
 
 const char *tokstrs[] = {
     [T_SEMI] = ";",
-    [T_ILIT] = "int literal",
+    [T_ILIT] = "<int literal>",
     [T_PLUS] = "+",
     [T_PUB] = "pub",
     [T_FN] = "fn",
     [T_LET] = "let",
-    [T_IDENT] = "identifier",
+    [T_IDENT] = "<identifier>",
     [T_COLON] = ":",
     [T_U32] = "u32",
     [T_EQ] = "=",
@@ -23,6 +23,9 @@ const char *tokstrs[] = {
     [T_IF] = "if",
     [T_LT] = "<",
     [T_RET] = "ret",
+    [T_AMP] = "&",
+    [T_EXTERN] = "extern",
+    [T_ARROW] = "->",
     [T_EOF] = "EOF"
 };
 
