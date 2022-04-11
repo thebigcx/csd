@@ -89,7 +89,7 @@ int cgcmp(int r1, int r2, int op)
     return r3;
 }
 
-// Dereference operator.
+// Dereference operator (*)
 int cgderef(struct ast *ast)
 {
     int r1 = cg(ast);
@@ -101,11 +101,24 @@ int cgderef(struct ast *ast)
     return r2;
 }
 
+// Address-of operator (&)
+int cgaddrof(struct ast *ast)
+{
+    int r = ralloc();
+    
+    fprintf(g_out, "\tlea %s, ", regs[r]);
+    cgvarloc(lookup(ast->sv));
+    fprintf(g_out, "\n");
+
+    return r;
+}
+
 int cgunary(struct ast *ast)
 {
     switch (ast->op)
     {
         case OP_DEREF: return cgderef(ast->left);
+        case OP_ADDR:  return cgaddrof(ast->left);
     }
 }
 

@@ -4,6 +4,47 @@
 
 struct ast *suffix();
 struct ast *primary();
+struct ast *prefix();
+
+// Address-of: trivial for identifiers, but in the case of
+// arrays and structs (which are translated to *(&arr + 4) for e.g.),
+// it will remove the dereference, therefore returning a memory address.
+struct ast *addrof()
+{
+    expect(T_AMP);
+    struct ast *left = prefix();
+
+    if (left->type == A_UNARY && left->op == OP_DEREF)
+    {
+        // TODO: free the node
+        //struct ast *tmp = left;
+        //left = left->left;
+        //free(tmp);
+        
+        // &* cancels out.
+        return left->left;
+    }
+    else
+    {
+        struct ast *ast = NEW(struct ast);
+        ast->type = A_UNARY;
+        ast->op   = OP_ADDR;
+        ast->left = left;
+        return ast;
+    }
+}
+
+// Dereference unary operator.
+struct ast *deref()
+{
+    expect(T_STAR);
+
+    struct ast *ast = NEW(struct ast);
+    ast->type = A_UNARY;
+    ast->op   = OP_DEREF;
+    ast->left = prefix();
+    return ast;
+}
 
 // Prefix of primary expression (*, &, etc.). Takes precedence over primary().
 struct ast *prefix()
@@ -12,15 +53,8 @@ struct ast *prefix()
 
     switch (g_tok.type)
     {
-        case T_STAR:
-            ast = NEW(struct ast);
-            ast->type = A_UNARY;
-            ast->op = OP_DEREF;
-
-            scan();
-            ast->left = prefix();
-
-            break;
+        case T_STAR: return deref();
+        case T_AMP:  return addrof();
 
         default:
             ast = suffix(primary());
@@ -107,7 +141,8 @@ struct ast *expr()
         return left;
 
     struct ast *ast = NEW(struct ast);
-
+    
+    ast->type  = A_BINOP;
     ast->left  = left;
     ast->mid   = arithop();
     ast->right = expr();

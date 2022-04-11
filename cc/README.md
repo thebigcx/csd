@@ -15,3 +15,5 @@ Custom programming language, assembly language, and binary format.
 - Intel-like syntax
 
 ## Binary Format Features
+- Simpler and easier to implement than ELF
+- Has many of the same features, lacks ones I deem unnecessary (such as shared libraries)

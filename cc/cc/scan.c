@@ -59,6 +59,7 @@ struct tok *scan()
         case '{': g_tok.type = T_LBRACE; return &g_tok;
         case '}': g_tok.type = T_RBRACE; return &g_tok;
         case '<': g_tok.type = T_LT;     return &g_tok;
+        case '&': g_tok.type = T_AMP;    return &g_tok;
     }
 
     if (isdigit(c))

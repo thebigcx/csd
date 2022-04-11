@@ -44,6 +44,7 @@ enum
     OP_ASSIGN,
     OP_DEREF,
     OP_LT,
+    OP_ADDR,
 };
 
 #define S_PUB  (1 << 0) // Public
@@ -108,6 +109,7 @@ enum
     T_LT,
     T_RET,
     T_EXTERN,
+    T_AMP,
     TOKCNT
 };
 
