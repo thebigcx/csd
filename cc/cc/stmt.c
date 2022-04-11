@@ -8,6 +8,19 @@ struct ast *decl()
 
     expect(T_LET);
     
+    // Public variable
+    int flags = 0;
+    if (g_tok.type == T_PUB)
+    {
+        flags |= S_PUB;
+        scan();
+    }
+    if (g_tok.type == T_EXTERN)
+    {
+        flags |= S_EXT;
+        scan();
+    }
+
     ast->sv = expect(T_IDENT).sv;
 
     expect(T_COLON);
@@ -22,7 +35,7 @@ struct ast *decl()
         expect(T_RBRACE);
     }
 
-    addsym(ast->sv, ast->vtype);
+    addsym(ast->sv, ast->vtype, flags);
 
     return ast;
 }

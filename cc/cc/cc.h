@@ -48,6 +48,7 @@ enum
 
 #define S_PUB  (1 << 0) // Public
 #define S_STCK (1 << 1) // Stack-allocated
+#define S_EXT  (1 << 2) // External
 
 // Symbol
 struct sym
@@ -106,6 +107,7 @@ enum
     T_EOF,
     T_LT,
     T_RET,
+    T_EXTERN,
     TOKCNT
 };
 
@@ -144,4 +146,4 @@ void setscope(struct symtab *symtab); // Set symbol table scope
 struct symtab *getscope(); // Get symbol table scope
 
 struct sym *lookup(const char *name); // Look up symbol in current scope
-struct sym *addsym(const char *name, struct type type); // Add symbol to symbol table
+struct sym *addsym(const char *name, struct type type, int flags); // Add symbol to symbol table

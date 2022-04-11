@@ -31,7 +31,7 @@ struct sym *lookup(const char *name)
     return _lookup(s_symtab, name);
 }
 
-struct sym *addsym(const char *name, struct type type)
+struct sym *addsym(const char *name, struct type type, int flags)
 {
     // Find last symbol in table
     struct sym **last = &s_symtab->head;
@@ -42,6 +42,7 @@ struct sym *addsym(const char *name, struct type type)
 
     (*last)->name = strdup(name);
     (*last)->type = type;
+    (*last)->flags = flags;
 
     // Stack flag, give it offset if required
     if (s_symtab->parent)

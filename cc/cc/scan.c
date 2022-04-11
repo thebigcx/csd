@@ -91,6 +91,8 @@ struct tok *scan()
         else if (!strcmp("u32", buf)) g_tok.type = T_U32;
         else if (!strcmp("if", buf))  g_tok.type = T_IF;
         else if (!strcmp("ret", buf)) g_tok.type = T_RET;
+        else if (!strcmp("pub", buf)) g_tok.type = T_PUB;
+        else if (!strcmp("extern", buf)) g_tok.type = T_EXTERN;
         else
         {
             g_tok.type = T_IDENT;

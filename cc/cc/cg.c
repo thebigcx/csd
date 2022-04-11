@@ -191,6 +191,17 @@ int cgif(struct ast *ast)
 // Generate declaration
 int cgdecl(struct ast *ast)
 {
+    // Global directive if public variable
+    if (lookup(ast->sv)->flags & S_PUB)
+        fprintf(g_out, "\tglobal %s\n", ast->sv);
+
+    // External variable, no definition
+    if (lookup(ast->sv)->flags & S_EXT)
+    {
+        fprintf(g_out, "\textern %s\n", ast->sv);
+        return NOREG;
+    }
+
     if (ast->vtype.func && !ast->vtype.ptr)
     {
         s_currfn = ast;
@@ -203,6 +214,7 @@ int cgdecl(struct ast *ast)
     }
     else if (!(lookup(ast->sv)->flags & S_STCK))
     {
+        // Allocate bytes for variable allocated in .data section
         fprintf(g_out, "%s:\n", ast->sv);
         fprintf(g_out, "\ttimes %d db 0\n", typesize(&ast->vtype));
     }
