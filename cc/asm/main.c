@@ -30,8 +30,13 @@ int main(int argc, char **argv)
     struct code code = {
         .mnem = "add",
         .op1 = {
-            .reg = R_BX,
-            .type = OP_SB | OP_TR
+            .mem = {
+                .base = R_AX,
+                .idx  = R_NUL,
+                .disp = 70,
+                .dispsz = 1
+            },
+            .type = OP_SB | OP_TM
         },
         .op2 = {
             .imm = 69,

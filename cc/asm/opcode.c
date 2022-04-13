@@ -138,6 +138,9 @@ struct opcode matchop(struct code *code)
             if (OP_TYPE(*op) == OP_TI)
                 code->imm = cop->imm;
 
+            if (OP_TYPE(cop->type) == OP_TM)
+                code->mem = cop;
+
             // spl, bpl, sil, dil registers (require REX.W prefix for use)
             if (cop->reg >= R_SP && cop->reg <= R_DI && OP_SIZE(cop->type) == 8)
                 opc.rex = 0b01000000; // TODO: ah, bh, ch, dh register macros (somehow?)

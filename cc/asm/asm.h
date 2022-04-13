@@ -18,6 +18,17 @@ struct tok
     uint64_t iv; // Integer value
 };
 
+struct mem
+{
+    uint64_t disp;
+    int dispsz;
+
+    int base, idx;
+    uint8_t scale;
+
+    int used;
+};
+
 // Parsed instruction operand
 struct op
 { 
@@ -28,6 +39,7 @@ struct op
     {
         int reg;
         uint64_t imm;
+        struct mem mem;
     };
 };
 
@@ -37,7 +49,9 @@ struct code
     char *mnem; // Mnemonic
     struct op op1, op2, op3; // Operands
 
-    // These fields used to pass info from opcode seacher to assembler
+    struct op *mem;
+
+    // These fields used to pass info from opcode searcher to assembler
     uint64_t imm;
 };
 
@@ -58,6 +72,8 @@ struct code
 #define R_R13 0b1101
 #define R_R14 0b1110
 #define R_R15 0b1111
+
+#define R_NUL (-1)
 
 #define OR_REGR (1 << 3) // /r
 

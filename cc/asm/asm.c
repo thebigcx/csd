@@ -4,6 +4,7 @@
 struct modrm
 {
     uint8_t mod, reg, rm;
+    int used;
 };
 
 static void emitb(uint8_t b)
@@ -44,17 +45,51 @@ void emitrex(struct opcode *opcode, struct modrm modrm)
         emit(rex);
 }
 
+// Create ModR/M and SIB bytes
+void modrmsib(struct modrm *modrm, struct code *code, struct opcode *opcode)
+{
+    struct mem *mem = &code->mem->mem;
+    modrm->reg = opcode->r;
+    
+    if (!mem)
+    {
+        uint8_t rm = OP_TYPE(opcode->op1) == (OP_TR | OP_TM) ? code->op1.reg
+                : OP_TYPE(opcode->op2) == (OP_TR | OP_TM) ? code->op2.reg
+                : code->op3.reg;
+
+        modrm->mod = 3;
+        modrm->rm  = rm;
+    }
+    else
+    {
+        if (mem->idx == R_NUL && mem->base != R_NUL
+            && (mem->base != R_SP && mem->base != R_R12))
+        {
+            modrm->rm = mem->base;
+            modrm->mod = mem->dispsz;
+
+            if (modrm->mod == 4) modrm->mod = 2;
+        }
+        else
+        {
+            modrm->rm = R_SP;
+            mem->used = 1;
+
+            if (mem->dispsz == 1)
+                modrm->mod = 1;
+            else
+                modrm->mod = 2;
+
+            if (mem->idx == R_NUL)
+                mem->idx = R_SP;
+        }
+    }
+}
+
 void assem(struct code *code, struct opcode *opcode)
 {
-    uint8_t rm = OP_TYPE(opcode->op1) == (OP_TR | OP_TM) ? code->op1.reg
-               : OP_TYPE(opcode->op2) == (OP_TR | OP_TM) ? code->op2.reg
-               : code->op3.reg;
-
-    struct modrm modrm = {
-        .mod = 3,
-        .reg = opcode->r,
-        .rm  = rm
-    };
+    struct modrm modrm = { 0 };
+    modrmsib(&modrm, code, opcode);    
 
     // REX
     emitrex(opcode, modrm);
@@ -68,6 +103,12 @@ void assem(struct code *code, struct opcode *opcode)
     // ModR/M
     // TODO: only emit it when necessary
     emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
+
+    if (code->mem->mem.used)
+        emit((code->mem->mem.scale << 6) | (code->mem->mem.idx << 3) | code->mem->mem.base);
+
+    // Displacement
+    emitv(code->mem->mem.disp, code->mem->mem.dispsz);
 
     // Immediate
     emitv(code->imm, opcode->imm);

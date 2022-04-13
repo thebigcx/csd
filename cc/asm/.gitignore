@@ -1,0 +1,4 @@
+asm
+*.o
+tests
+disas.sh
