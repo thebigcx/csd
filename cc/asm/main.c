@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     struct code code = {
         .mnem = "add",
         .op1 = {
-            .reg = R_CX,
+            .reg = R_BX,
             .type = OP_SB | OP_TR
         },
         .op2 = {

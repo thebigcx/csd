@@ -1,4 +1,5 @@
 mnem add
+0x04 ib %al imm8
 0x00 /r RM8 R8
 0x01 +R /r RM64 R64
 0x80 /0 ib RM8 imm8

@@ -49,7 +49,7 @@ void parse_opcodes()
                 else if (!strcmp(tok, "+R"))
                 {
                     // REX.W prefix
-                    op.rexw = 1;
+                    op.rex = 0b01001000;
                 }
                 else if (!strncmp(tok, "imm", 3))
                 {
@@ -82,6 +82,10 @@ void parse_opcodes()
                     size_t s = strtol(tok, NULL, 10) / 8; // Size in bytes
 
                     *oper++ = type | (s << 3);
+                }
+                else if (*tok == '%')
+                {
+                    *oper++ = psreg(++tok);
                 }
             }
 
@@ -116,6 +120,13 @@ struct opcode matchop(struct code *code)
         struct op *cop;
         for (op = &opc.op1, cop = &code->op1; *op && cop->type; op++, cop++)
         {
+            // Specific register
+            if (!OP_TYPE(*op))
+            {
+                if (OP_REG(*op) != cop->reg) goto next;
+                else continue;
+            }
+
             // Size or type doesn't match
             if (!(OP_TYPE(cop->type) & OP_TYPE(*op))
                 || OP_SIZE(cop->type) != OP_SIZE(*op))
@@ -127,7 +138,9 @@ struct opcode matchop(struct code *code)
             if (OP_TYPE(*op) == OP_TI)
                 code->imm = cop->imm;
 
-            // TODO: specific register in operand check
+            // spl, bpl, sil, dil registers (require REX.W prefix for use)
+            if (cop->reg >= R_SP && cop->reg <= R_DI && OP_SIZE(cop->type) == 8)
+                opc.rex = 0b01000000; // TODO: ah, bh, ch, dh register macros (somehow?)
         }
 
         return opc;

@@ -32,15 +32,15 @@ static void emit(uint64_t v)
 
 #define REX_BASE (0b0100 << 4)
 
-void emitrex(int w, struct modrm modrm)
+void emitrex(struct opcode *opcode, struct modrm modrm)
 {
-    uint8_t rex = REX_BASE | (w << 3);
+    uint8_t rex = opcode->rex;
 
     rex |= (modrm.reg & 0b1000) << 2;
     // SIB: rex |= (modrm.reg & 0b1000) << 2;
     rex |= (modrm.rm & 0b1000) << 0;
 
-    if (rex != REX_BASE)
+    if (rex)
         emit(rex);
 }
 
@@ -57,7 +57,7 @@ void assem(struct code *code, struct opcode *opcode)
     };
 
     // REX
-    emitrex(opcode->rexw, modrm);
+    emitrex(opcode, modrm);
 
     // Opcode
     if (opcode->of)
@@ -66,6 +66,7 @@ void assem(struct code *code, struct opcode *opcode)
     emit(opcode->po);
 
     // ModR/M
+    // TODO: only emit it when necessary
     emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
 
     // Immediate

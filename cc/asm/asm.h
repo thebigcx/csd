@@ -79,13 +79,14 @@ struct code
 #define OP_SIZE(op) (op & OP_SMASK)
 
 #define OP_RMASK (0b11111111 << 7) // Register bit mask
+#define OP_REG(op) ((op & OP_RMASK) >> 7)
 
 // Opcode specification (information parsed from special file)
 struct opcode
 {
     const char *mnem; // Mnemonic
 
-    uint8_t rexw; // REX.W to denote 64-bit operands
+    uint8_t rex; // REX prefix (e.g. denotes %spl reg, 64-bit operands)
 
     uint8_t of; // Prefix 0f
     uint8_t po; // Primary Opcode
@@ -102,6 +103,7 @@ extern struct tok g_tok;
 
 // code.c
 struct code pscode(); // Parse code
+uint32_t psreg(const char *str); // Parse register
 
 // asm.c
 void assem(struct code *code, struct opcode *opcode); // Assemble code
