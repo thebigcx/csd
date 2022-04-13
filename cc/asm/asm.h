@@ -18,25 +18,22 @@ struct tok
     uint64_t iv; // Integer value
 };
 
-// Code types
-enum CODE
-{
-    C_INST,
-    C_REG,
-    C_IMM,
-    C_MEM
-};
-
 // Parsed instruction operand
 struct op
-{   
-    int reg;
-    size_t size;
+{ 
+    uint32_t type; // Operand type and size
+
+    // Value
+    union
+    {
+        int reg;
+    };
 };
 
 // Parsed assembly code
 struct code
 {
+    char *mnem; // Mnemonic
     struct op op1, op2, op3; // Operands
 };
 
@@ -66,7 +63,7 @@ struct code
 #define OP_TI (1 << 2) // Imm
 
 #define OP_TMASK (0b111) // Type bit mask
-#define OP_TYPE(op) (op & TMASK)
+#define OP_TYPE(op) (op & OP_TMASK)
 
 // Operands Sizes
 #define OP_SB (1 << 3) // Byte
@@ -75,7 +72,7 @@ struct code
 #define OP_SQ (1 << 6) // Quadword
 
 #define OP_SMASK (0b1111 << 3) // Size bit mask
-#define OP_SIZE(op) (op & SMASK)
+#define OP_SIZE(op) (op & OP_SMASK)
 
 #define OP_RMASK (0b11111111 << 7) // Register bit mask
 
@@ -83,6 +80,8 @@ struct code
 struct opcode
 {
     const char *mnem; // Mnemonic
+
+    uint8_t rexw; // REX.W to denote 64-bit operands
 
     uint8_t of; // Prefix 0f
     uint8_t po; // Primary Opcode
@@ -101,7 +100,7 @@ extern struct tok g_tok;
 struct code pscode(); // Parse code
 
 // asm.c
-void assem(struct code *code); // Assemble code
+void assem(struct code *code, struct opcode *opcode); // Assemble code
 
 // opcode.c
 struct opcode matchop(struct code *code); // Match opcode from parsed code

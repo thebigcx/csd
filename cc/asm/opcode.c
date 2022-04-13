@@ -11,7 +11,7 @@ void parse_opcodes()
 {
     FILE *f = fopen("optbl.txt", "r");
 
-    char *line;
+    char *line = NULL;
     size_t n;
     
     // Current mnemonic
@@ -46,6 +46,11 @@ void parse_opcodes()
                     op.r = *(++tok) == 'r'
                          ? OR_REGR : *tok - '0';
                 }
+                else if (!strcmp(tok, "+R"))
+                {
+                    // REX.W prefix
+                    op.rexw = 1;
+                }
                 else if (*tok == 'R')
                 {
                     // r/m or reg operand
@@ -57,9 +62,9 @@ void parse_opcodes()
                         tok++;
                     }
 
-                    size_t s = strtol(tok, NULL, 10);
+                    size_t s = strtol(tok, NULL, 10) / 8; // Size in bytes
 
-                    *oper = type | (s << 3);
+                    *oper++ = type | (s << 3);
                 }
             }
 
@@ -71,6 +76,8 @@ void parse_opcodes()
     fclose(f);
 }
 
+// Matches an opcode spec to code. It will be modified to contain
+// relevant information for assembling (e.g. ModR/M.reg byte, etc.)
 struct opcode matchop(struct code *code)
 {
     static int init = 0;
@@ -79,4 +86,36 @@ struct opcode matchop(struct code *code)
         parse_opcodes();
         init = 1;
     }
+
+    for (unsigned int i = 0; i < s_opcnt; i++)
+    {
+        struct opcode opc = s_ops[i]; // Copy it for modification
+
+        if (strcmp(opc.mnem, code->mnem))
+            goto next;
+
+        // Match the operands
+        uint32_t *op;
+        struct op *cop;
+        for (op = &opc.op1, cop = &code->op1; *op && cop->type; op++, cop++)
+        {
+            // Size or type doesn't match
+            if (!(OP_TYPE(cop->type) & OP_TYPE(*op))
+                || OP_SIZE(cop->type) != OP_SIZE(*op))
+                goto next;
+
+            if (opc.r == OR_REGR && OP_TYPE(*op) == OP_TR)
+                opc.r = cop->reg;
+
+            // TODO: specific register in operand check
+        }
+
+        return opc;
+
+    next:
+        continue;
+    }
+
+    // Doesn't exist
+    printf("No such instruction.\n");
 }

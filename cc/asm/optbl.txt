@@ -1,2 +1,3 @@
 mnem add
-0x04 /r rm8 r8
+0x00 /r RM8 R8
+0x01 +R /r RM64 R64

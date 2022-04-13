@@ -1,4 +1,4 @@
-SRC=main.c
+SRC=main.c code.c asm.c opcode.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
 CFLAGS=-g

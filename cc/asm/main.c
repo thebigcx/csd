@@ -27,7 +27,21 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
-    matchop(NULL);
+    struct code code = {
+        .mnem = "add",
+        .op1 = {
+            .reg = R_CX,
+            .type = OP_SQ | OP_TR
+        },
+        .op2 = {
+            .reg = R_BX,
+            .type = OP_SQ | OP_TR
+        }
+    };
+
+    struct opcode opcode = matchop(&code);
+
+    assem(&code, &opcode);
 
     fclose(g_in);
     fclose(g_out);
