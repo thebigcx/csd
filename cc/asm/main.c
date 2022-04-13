@@ -31,11 +31,11 @@ int main(int argc, char **argv)
         .mnem = "add",
         .op1 = {
             .reg = R_CX,
-            .type = OP_SQ | OP_TR
+            .type = OP_SB | OP_TR
         },
         .op2 = {
-            .reg = R_BX,
-            .type = OP_SQ | OP_TR
+            .imm = 69,
+            .type = OP_SB | OP_TI
         }
     };
 

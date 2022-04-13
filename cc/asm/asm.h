@@ -27,6 +27,7 @@ struct op
     union
     {
         int reg;
+        uint64_t imm;
     };
 };
 
@@ -35,6 +36,9 @@ struct code
 {
     char *mnem; // Mnemonic
     struct op op1, op2, op3; // Operands
+
+    // These fields used to pass info from opcode seacher to assembler
+    uint64_t imm;
 };
 
 // Low 4 bits of register, high bits are size

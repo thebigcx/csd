@@ -51,6 +51,23 @@ void parse_opcodes()
                     // REX.W prefix
                     op.rexw = 1;
                 }
+                else if (!strncmp(tok, "imm", 3))
+                {
+                    // Immediate operand
+                    size_t s = strtol(tok += 3, NULL, 10) / 8;
+                    *oper++ = OP_TI | (s << 3);
+                }
+                else if (*tok == 'i')
+                {
+                    // Immediate size
+                    switch (*(++tok))
+                    {
+                        case 'b': op.imm = 1; break;
+                        case 'w': op.imm = 2; break;
+                        case 'd': op.imm = 4; break;
+                        case 'q': op.imm = 8; break;
+                    }
+                }
                 else if (*tok == 'R')
                 {
                     // r/m or reg operand
@@ -106,6 +123,9 @@ struct opcode matchop(struct code *code)
 
             if (opc.r == OR_REGR && OP_TYPE(*op) == OP_TR)
                 opc.r = cop->reg;
+
+            if (OP_TYPE(*op) == OP_TI)
+                code->imm = cop->imm;
 
             // TODO: specific register in operand check
         }

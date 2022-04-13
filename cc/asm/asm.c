@@ -11,6 +11,17 @@ static void emitb(uint8_t b)
     fwrite(&b, 1, 1, g_out);
 }
 
+static void emitv(uint64_t v, int size)
+{
+    switch (size)
+    {
+        case 1: emitb(v); break;
+        /*case 2: emitw(v); break;
+        case 4: emitd(v); break;
+        case 8: emitq(v); break;*/
+    }
+}
+
 static void emit(uint64_t v)
 {
          if (v < UINT8_MAX)  emitb(v);
@@ -56,4 +67,7 @@ void assem(struct code *code, struct opcode *opcode)
 
     // ModR/M
     emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
+
+    // Immediate
+    emitv(code->imm, opcode->imm);
 }
