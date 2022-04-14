@@ -32,12 +32,12 @@ void parse_opcodes()
         else
         {
             // Distinct opcode/instruction
-            struct opcode op = { .mnem = mnem };
+            struct opcode op = { .mnem = mnem, .r = OR_UNUSED };
             
             tok += 2; // '0x'
             op.po = strtol(tok, NULL, 16);
 
-            uint32_t *oper = &op.op[1]; // Current operand
+            uint32_t *oper = &op.op[0]; // Current operand
             while ((tok = strsep(&line, " ")))
             {
                 if (*tok == '/')
@@ -50,6 +50,10 @@ void parse_opcodes()
                 {
                     // REX.W prefix
                     op.rex = 0b01001000;
+                }
+                else if (!strcmp(tok, "+L"))
+                {
+                    op.osovr = 0x66;
                 }
                 else if (!strncmp(tok, "imm", 3))
                 {
@@ -118,7 +122,7 @@ struct opcode matchop(struct code *code)
         // Match the operands
         uint32_t *op;
         struct op *cop;
-        for (op = &opc.op[1], cop = &code->op[1]; *op && cop->type; op++, cop++)
+        for (op = &opc.op[0], cop = &code->op[0]; *op && cop->type; op++, cop++)
         {
             // Specific register
             if (!OP_TYPE(*op))
@@ -132,14 +136,24 @@ struct opcode matchop(struct code *code)
                 || OP_SIZE(cop->type) != OP_SIZE(*op))
                 goto next;
 
+            // ModR/M.reg field
             if (opc.r == OR_REGR && OP_TYPE(*op) == OP_TR)
                 opc.r = cop->reg;
 
+            // Immediate
             if (OP_TYPE(*op) == OP_TI)
                 code->imm = cop->imm;
 
+            // Memory address
             if (OP_TYPE(cop->type) == OP_TM)
+            {
                 code->mem = cop;
+                opc.asovr = cop->mem.size == 32 ? 0x67 : 0;
+            }
+
+            // R/M field
+            if (OP_TYPE(*op) == (OP_TR | OP_TM))
+                code->rm = cop;
 
             // spl, bpl, sil, dil registers (require REX.W prefix for use)
             if (cop->reg >= R_SP && cop->reg <= R_DI && OP_SIZE(cop->type) == 8)

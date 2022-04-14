@@ -29,7 +29,7 @@ struct mem
     int base, idx;
     uint8_t scale;
 
-    int used;
+    int used, size;
 };
 
 // Parsed instruction operand
@@ -52,7 +52,7 @@ struct code
     char *mnem; // Mnemonic
     struct op op[3]; // Operands
 
-    struct op *mem;
+    struct op *mem, *rm;
 
     // These fields used to pass info from opcode searcher to assembler
     uint64_t imm;
@@ -79,6 +79,7 @@ struct code
 #define R_NUL (-1)
 
 #define OR_REGR (1 << 3) // /r
+#define OR_UNUSED (255)  // ModR/M.reg field unused
 
 // Types
 #define OP_TR (1 << 0) // Reg
@@ -104,6 +105,9 @@ struct code
 struct opcode
 {
     const char *mnem; // Mnemonic
+
+    uint8_t osovr; // Operand-size override
+    uint8_t asovr; // Address-size override
 
     uint8_t rex; // REX prefix (e.g. denotes %spl reg, 64-bit operands)
 

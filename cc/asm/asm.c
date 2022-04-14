@@ -48,16 +48,16 @@ void emitrex(struct opcode *opcode, struct modrm modrm)
 // Create ModR/M and SIB bytes
 void modrmsib(struct modrm *modrm, struct code *code, struct opcode *opcode)
 {
-    modrm->reg = opcode->r;
+    if (!code->mem && !code->rm && opcode->r == OR_UNUSED)
+        return;
+
+    modrm->used = 1;
+    modrm->reg  = opcode->r;
     
     if (!code->mem)
     {
-        uint8_t rm = OP_TYPE(opcode->op[1]) == (OP_TR | OP_TM) ? code->op[1].reg
-                : OP_TYPE(opcode->op[2]) == (OP_TR | OP_TM) ? code->op[2].reg
-                : code->op[3].reg;
-
         modrm->mod = 3;
-        modrm->rm  = rm;
+        modrm->rm  = code->rm->reg;
     }
     else
     {
@@ -92,6 +92,12 @@ void assem(struct code *code, struct opcode *opcode)
     struct modrm modrm = { 0 };
     modrmsib(&modrm, code, opcode);    
 
+    // Operand/address size overrides
+    if (opcode->osovr)
+        emit(opcode->osovr);
+    if (opcode->asovr)
+        emit(opcode->asovr);
+
     // REX
     emitrex(opcode, modrm);
 
@@ -103,7 +109,8 @@ void assem(struct code *code, struct opcode *opcode)
 
     // ModR/M
     // TODO: only emit it when necessary
-    emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
+    if (modrm.used)
+        emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
 
     if (code->mem && code->mem->mem.used)
         emit((code->mem->mem.scale << 6) | (code->mem->mem.idx << 3) | code->mem->mem.base);

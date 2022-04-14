@@ -103,7 +103,7 @@ struct code pscode()
     // Parse operands
     scan();
 
-    struct op *op = &code.op[1];
+    struct op *op = &code.op[0];
     while (1)
     {
         *op++ = psop(g_tok.sv);
