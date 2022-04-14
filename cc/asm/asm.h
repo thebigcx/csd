@@ -12,6 +12,10 @@ enum TOKEN
     T_ILIT,
     T_LBRACK,
     T_RBRACK,
+    T_LPAREN,
+    T_RPAREN,
+    T_STAR,
+    T_PLUS,
     TOKCNT
 };
 

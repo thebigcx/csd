@@ -12,7 +12,11 @@ const char *tokstrs[] = {
     [T_ILIT]   = "<int literal>",
     [T_LBRACK] = "[",
     [T_RBRACK] = "]",
-    [T_COMMA]  = ","
+    [T_COMMA]  = ",",
+    [T_LPAREN] = "(",
+    [T_RPAREN] = ")",
+    [T_STAR]   = "*",
+    [T_PLUS]   = "+"
 };
 
 // Valid character in identifier

@@ -74,18 +74,44 @@ struct mem psmem()
         .size = 8
     };
 
-    scan(); // [
+    scan();
 
-    if (g_tok.type == T_ILIT)
+    while (g_tok.type != T_RBRACK)
+    {
+        // Parse (index * scale)
+        if (g_tok.type == T_LPAREN)
+        {
+            scan(); // index
+            mem.idx = OP_REG(psreg(g_tok.sv));
+            scan(); // *
+            scan(); // scale
+
+            uint64_t scale = g_tok.iv;
+            while (scale >>= 1) mem.scale++;
+
+            scan(); // )
+        }
+        else if (g_tok.type == T_ILIT)
+        {
+            mem.disp = g_tok.iv;
+            mem.dispsz = g_tok.iv < UINT8_MAX ? 1 : 4;
+        }
+        else if (g_tok.type == T_IDENT)
+        {
+            mem.base = OP_REG(psreg(g_tok.sv));
+        }
+
+        scan();
+    }
+
+    /*if (g_tok.type == T_ILIT)
     {
         mem.disp = g_tok.iv;
         mem.dispsz = g_tok.iv < UINT8_MAX ? 1 : 4;
         return mem;
     }
 
-    mem.base = OP_REG(psreg(g_tok.sv));
-
-    scan(); // ]
+    mem.base = OP_REG(psreg(g_tok.sv));*/
 
     return mem;
 }
