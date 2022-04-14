@@ -48,20 +48,21 @@ void emitrex(struct opcode *opcode, struct modrm modrm)
 // Create ModR/M and SIB bytes
 void modrmsib(struct modrm *modrm, struct code *code, struct opcode *opcode)
 {
-    struct mem *mem = &code->mem->mem;
     modrm->reg = opcode->r;
     
-    if (!mem)
+    if (!code->mem)
     {
-        uint8_t rm = OP_TYPE(opcode->op1) == (OP_TR | OP_TM) ? code->op1.reg
-                : OP_TYPE(opcode->op2) == (OP_TR | OP_TM) ? code->op2.reg
-                : code->op3.reg;
+        uint8_t rm = OP_TYPE(opcode->op[1]) == (OP_TR | OP_TM) ? code->op[1].reg
+                : OP_TYPE(opcode->op[2]) == (OP_TR | OP_TM) ? code->op[2].reg
+                : code->op[3].reg;
 
         modrm->mod = 3;
         modrm->rm  = rm;
     }
     else
     {
+        struct mem *mem = &code->mem->mem;
+
         if (mem->idx == R_NUL && mem->base != R_NUL
             && (mem->base != R_SP && mem->base != R_R12))
         {
@@ -104,11 +105,12 @@ void assem(struct code *code, struct opcode *opcode)
     // TODO: only emit it when necessary
     emit((modrm.mod << 6) | (modrm.reg << 3) | modrm.rm);
 
-    if (code->mem->mem.used)
+    if (code->mem && code->mem->mem.used)
         emit((code->mem->mem.scale << 6) | (code->mem->mem.idx << 3) | code->mem->mem.base);
 
     // Displacement
-    emitv(code->mem->mem.disp, code->mem->mem.dispsz);
+    if (code->mem)
+        emitv(code->mem->mem.disp, code->mem->mem.dispsz);
 
     // Immediate
     emitv(code->imm, opcode->imm);

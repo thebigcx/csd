@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
-    struct code code = {
+    /*struct code code = {
         .mnem = "add",
         .op1 = {
             .mem = {
@@ -42,7 +42,8 @@ int main(int argc, char **argv)
             .imm = 69,
             .type = OP_SB | OP_TI
         }
-    };
+    };*/
+    struct code code = pscode();
 
     struct opcode opcode = matchop(&code);
 

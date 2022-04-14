@@ -6,7 +6,10 @@
 enum TOKEN
 {
     T_IDENT,
+    T_NL, // Newline
     T_EOF,
+    T_COMMA,
+    T_ILIT,
     TOKCNT
 };
 
@@ -47,7 +50,7 @@ struct op
 struct code
 {
     char *mnem; // Mnemonic
-    struct op op1, op2, op3; // Operands
+    struct op op[3]; // Operands
 
     struct op *mem;
 
@@ -108,7 +111,7 @@ struct opcode
     uint8_t po; // Primary Opcode
     uint8_t r;  // Register/Opcode field
 
-    uint32_t op1, op2, op3; // Operands
+    uint32_t op[3]; // Operands
 
     uint8_t imm; // Immediate size in bytes (0 if unused)
 };
@@ -126,3 +129,6 @@ void assem(struct code *code, struct opcode *opcode); // Assemble code
 
 // opcode.c
 struct opcode matchop(struct code *code); // Match opcode from parsed code
+
+// scan.c
+struct tok *scan();

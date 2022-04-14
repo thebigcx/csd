@@ -37,7 +37,7 @@ void parse_opcodes()
             tok += 2; // '0x'
             op.po = strtol(tok, NULL, 16);
 
-            uint32_t *oper = &op.op1; // Current operand
+            uint32_t *oper = &op.op[1]; // Current operand
             while ((tok = strsep(&line, " ")))
             {
                 if (*tok == '/')
@@ -118,7 +118,7 @@ struct opcode matchop(struct code *code)
         // Match the operands
         uint32_t *op;
         struct op *cop;
-        for (op = &opc.op1, cop = &code->op1; *op && cop->type; op++, cop++)
+        for (op = &opc.op[1], cop = &code->op[1]; *op && cop->type; op++, cop++)
         {
             // Specific register
             if (!OP_TYPE(*op))
