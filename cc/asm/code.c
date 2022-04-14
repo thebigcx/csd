@@ -104,23 +104,25 @@ struct mem psmem()
         scan();
     }
 
-    /*if (g_tok.type == T_ILIT)
-    {
-        mem.disp = g_tok.iv;
-        mem.dispsz = g_tok.iv < UINT8_MAX ? 1 : 4;
-        return mem;
-    }
-
-    mem.base = OP_REG(psreg(g_tok.sv));*/
-
     return mem;
+}
+
+uint32_t pssize(const char *str)
+{
+    if (*str++ != 'u') return 0;
+    return strtol(str, NULL, 10) / 8;
 }
 
 struct op psop()
 {
+    // Size attribute (u8, u16, etc.)
+    uint32_t opsz = pssize(g_tok.sv);
+    if (opsz) scan();
+
     // Immediate
     if (g_tok.type == T_ILIT)
     {
+        // TODO: immediates can be less than actual size
         int size = g_tok.iv < UINT8_MAX ? 1
                  : g_tok.iv < UINT16_MAX ? 2
                  : g_tok.iv < UINT32_MAX ? 4 : 8;
@@ -132,8 +134,14 @@ struct op psop()
     }
     else if (g_tok.type == T_LBRACK)
     {
+        if (!opsz)
+        {
+            // TODO: error
+            printf("Must specify size for memory address.\n");
+        }
+
         return (struct op) {
-            .type = OP_TM | OP_SW, // TODO: determine size
+            .type = OP_TM | (opsz << 3),
             .mem  = psmem()
         };
     }

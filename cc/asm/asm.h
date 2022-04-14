@@ -129,6 +129,7 @@ struct opcode
 extern FILE *g_in;
 extern FILE *g_out;
 extern struct tok g_tok;
+extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
 
 // code.c
 struct code pscode(); // Parse code

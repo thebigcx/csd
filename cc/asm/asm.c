@@ -12,23 +12,41 @@ static void emitb(uint8_t b)
     fwrite(&b, 1, 1, g_out);
 }
 
+static void emitw(uint16_t w)
+{
+    emitb(w &  0xff);
+    emitb(w >> 8);
+}
+
+static void emitd(uint32_t d)
+{
+    emitw(d &  0xffff);
+    emitw(d >> 16);
+}
+
+static void emitq(uint64_t q)
+{
+    emitd(q &  0xffffffff);
+    emitd(q >> 32);
+}
+
 static void emitv(uint64_t v, int size)
 {
     switch (size)
     {
         case 1: emitb(v); break;
-        /*case 2: emitw(v); break;
+        case 2: emitw(v); break;
         case 4: emitd(v); break;
-        case 8: emitq(v); break;*/
+        case 8: emitq(v); break;
     }
 }
 
 static void emit(uint64_t v)
 {
          if (v < UINT8_MAX)  emitb(v);
-    /*else if (v < UINT16_MAX) emitw(v);
+    else if (v < UINT16_MAX) emitw(v);
     else if (v < UINT32_MAX) emitd(v);
-    else if (v < UINT64_MAX) emitq(v);*/
+    else if (v < UINT64_MAX) emitq(v);
 }
 
 #define REX_BASE (0b0100 << 4)

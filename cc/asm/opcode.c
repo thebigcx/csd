@@ -53,7 +53,7 @@ void parse_opcodes()
                 }
                 else if (!strcmp(tok, "+L"))
                 {
-                    op.osovr = 0x66;
+                    //op.osovr = 0x66;
                 }
                 else if (!strncmp(tok, "imm", 3))
                 {
@@ -135,6 +135,11 @@ struct opcode matchop(struct code *code)
             if (!(OP_TYPE(cop->type) & OP_TYPE(*op))
                 || OP_SIZE(cop->type) != OP_SIZE(*op))
                 goto next;
+
+            if (g_mode == 8 && OP_SIZE(cop->type) == OP_SW
+                || g_mode == 4 && OP_SIZE(cop->type) == OP_SW
+                || g_mode == 2 && OP_SIZE(cop->type) == OP_SD)
+                opc.osovr = 0x66;
 
             // ModR/M.reg field
             if (opc.r == OR_REGR && OP_TYPE(*op) == OP_TR)
