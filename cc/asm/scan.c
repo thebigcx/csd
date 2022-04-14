@@ -100,3 +100,12 @@ struct tok *scan()
         g_tok.type = t;
     }
 }
+
+void expect(int tok)
+{
+    if (g_tok.type != tok)
+    {
+        printf("Expected '%s', got '%s'\n", tokstrs[tok], tokstrs[g_tok.type]);
+    }
+    scan();
+}

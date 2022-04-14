@@ -64,6 +64,14 @@ struct code
     uint64_t imm;
 };
 
+// Label
+struct label
+{
+    char *name;
+    uint64_t val;
+    int undef; // Undefined
+};
+
 // Low 4 bits of register, high bits are size
 #define R_AX  0b0000
 #define R_CX  0b0001
@@ -134,12 +142,16 @@ extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
 // code.c
 struct code pscode(); // Parse code
 uint32_t psreg(const char *str); // Parse register
+void dofile(); // Assemble file
 
 // asm.c
 void assem(struct code *code, struct opcode *opcode); // Assemble code
+void addlabel(char *name, uint64_t pc);
+void forwardref(char *name);
 
 // opcode.c
 struct opcode matchop(struct code *code); // Match opcode from parsed code
 
 // scan.c
 struct tok *scan();
+void expect(int tok);

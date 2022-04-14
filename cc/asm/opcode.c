@@ -51,10 +51,6 @@ void parse_opcodes()
                     // REX.W prefix
                     op.rex = 0b01001000;
                 }
-                else if (!strcmp(tok, "+L"))
-                {
-                    //op.osovr = 0x66;
-                }
                 else if (!strncmp(tok, "imm", 3))
                 {
                     // Immediate operand

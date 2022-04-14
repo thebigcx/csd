@@ -28,11 +28,12 @@ int main(int argc, char **argv)
 
     g_out = fopen(oname, "w+");
 
-    struct code code = pscode();
+    /*struct code code = pscode();
 
     struct opcode opcode = matchop(&code);
 
-    assem(&code, &opcode);
+    assem(&code, &opcode);*/
+    dofile();
 
     fclose(g_in);
     fclose(g_out);

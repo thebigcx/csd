@@ -74,7 +74,7 @@ struct mem psmem()
         .size = 8
     };
 
-    scan();
+    expect(T_LBRACK);
 
     while (g_tok.type != T_RBRACK)
     {
@@ -83,13 +83,13 @@ struct mem psmem()
         {
             scan(); // index
             mem.idx = OP_REG(psreg(g_tok.sv));
-            scan(); // *
-            scan(); // scale
+            expect(T_IDENT);
+            expect(T_STAR);
 
             uint64_t scale = g_tok.iv;
             while (scale >>= 1) mem.scale++;
 
-            scan(); // )
+            expect(T_ILIT);
         }
         else if (g_tok.type == T_ILIT)
         {
@@ -161,13 +161,11 @@ struct code pscode()
 {
     struct code code = { 0 };
 
-    scan();
-
     code.mnem = strdup(g_tok.sv);
+    expect(T_IDENT);
 
     // Parse operands
-    scan();
-
+    
     struct op *op = &code.op[0];
     while (1)
     {
@@ -178,8 +176,24 @@ struct code pscode()
         if (g_tok.type == T_NL)
             break;
         else
-            scan(); // Expect comma
+            expect(T_COMMA);
     }
 
     return code;
+}
+
+// Assemble file
+void dofile()
+{
+    scan();
+    while (1)
+    {
+        while (g_tok.type == T_NL) scan();
+        if (g_tok.type == T_EOF) break;
+
+        struct code code = pscode();
+        struct opcode op = matchop(&code);
+        
+        assem(&code, &op);
+    }
 }

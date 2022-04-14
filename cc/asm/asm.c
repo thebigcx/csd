@@ -1,6 +1,9 @@
 // Main instruction assembler
 #include "asm.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 struct modrm
 {
     uint8_t mod, reg, rm;
@@ -47,6 +50,41 @@ static void emit(uint64_t v)
     else if (v < UINT16_MAX) emitw(v);
     else if (v < UINT32_MAX) emitd(v);
     else if (v < UINT64_MAX) emitq(v);
+}
+
+static struct label *s_lbls = NULL;
+static unsigned int s_lblcnt = 0;
+
+// Add a label to the list (or define an undefined one)
+void addlabel(char *name, uint64_t pc)
+{
+    for (unsigned int i = 0; i < s_lblcnt; i++)
+    {
+        if (!strcmp(name, s_lbls[i].name))
+        {
+            s_lbls[i].undef = 0;
+            s_lbls[i].val   = pc;
+            return;
+        }
+    }
+
+    s_lbls = realloc(s_lbls, sizeof(struct label) * (s_lblcnt + 1));
+    s_lbls[s_lblcnt++] = (struct label) {
+        .name = name,
+        .val  = pc
+    };
+}
+
+// Forward reference a label (add it as undefined, define it later)
+void forwardref(char *name)
+{
+    // TODO: add the offset and size of the forward reference (to resolve later)
+
+    s_lbls = realloc(s_lbls, sizeof(struct label) * (s_lblcnt + 1));
+    s_lbls[s_lblcnt++] = (struct label) {
+        .name = name,
+        .undef = 1
+    };
 }
 
 #define REX_BASE (0b0100 << 4)
