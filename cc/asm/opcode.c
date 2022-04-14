@@ -148,7 +148,7 @@ struct opcode matchop(struct code *code)
             if (OP_TYPE(cop->type) == OP_TM)
             {
                 code->mem = cop;
-                opc.asovr = cop->mem.size == 32 ? 0x67 : 0;
+                opc.asovr = cop->mem.size == 4 ? 0x67 : 0;
             }
 
             // R/M field

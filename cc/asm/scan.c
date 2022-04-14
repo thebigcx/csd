@@ -6,11 +6,13 @@
 #include <stdlib.h>
 
 const char *tokstrs[] = {
-    [T_IDENT] = "<identifier>",
-    [T_NL]    = "<newline>",
-    [T_EOF]   = "<EOF>",
-    [T_ILIT]  = "<int literal>",
-    [T_COMMA] = ","
+    [T_IDENT]  = "<identifier>",
+    [T_NL]     = "<newline>",
+    [T_EOF]    = "<EOF>",
+    [T_ILIT]   = "<int literal>",
+    [T_LBRACK] = "[",
+    [T_RBRACK] = "]",
+    [T_COMMA]  = ","
 };
 
 // Valid character in identifier

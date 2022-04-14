@@ -66,7 +66,31 @@ uint32_t psreg(const char *str)
     return 0;
 }
 
-struct op psop(const char *str)
+struct mem psmem()
+{
+    struct mem mem = {
+        .base = R_NUL,
+        .idx  = R_NUL,
+        .size = 8
+    };
+
+    scan(); // [
+
+    if (g_tok.type == T_ILIT)
+    {
+        mem.disp = g_tok.iv;
+        mem.dispsz = g_tok.iv < UINT8_MAX ? 1 : 4;
+        return mem;
+    }
+
+    mem.base = OP_REG(psreg(g_tok.sv));
+
+    scan(); // ]
+
+    return mem;
+}
+
+struct op psop()
 {
     // Immediate
     if (g_tok.type == T_ILIT)
@@ -80,9 +104,16 @@ struct op psop(const char *str)
             .imm  = g_tok.iv
         };
     }
+    else if (g_tok.type == T_LBRACK)
+    {
+        return (struct op) {
+            .type = OP_TM | OP_SW, // TODO: determine size
+            .mem  = psmem()
+        };
+    }
 
     // Try register
-    uint32_t reg = psreg(str);
+    uint32_t reg = psreg(g_tok.sv);
     if (reg)
     {
         return (struct op) {
@@ -106,7 +137,7 @@ struct code pscode()
     struct op *op = &code.op[0];
     while (1)
     {
-        *op++ = psop(g_tok.sv);
+        *op++ = psop();
 
         scan();
 

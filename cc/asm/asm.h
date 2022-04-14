@@ -10,6 +10,8 @@ enum TOKEN
     T_EOF,
     T_COMMA,
     T_ILIT,
+    T_LBRACK,
+    T_RBRACK,
     TOKCNT
 };
 
