@@ -16,7 +16,8 @@ const char *tokstrs[] = {
     [T_LPAREN] = "(",
     [T_RPAREN] = ")",
     [T_STAR]   = "*",
-    [T_PLUS]   = "+"
+    [T_PLUS]   = "+",
+    [T_COLON]  = ":"
 };
 
 // Valid character in identifier

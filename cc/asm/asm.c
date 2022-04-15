@@ -52,6 +52,11 @@ static void emit(uint64_t v)
     else if (v < UINT64_MAX) emitq(v);
 }
 
+unsigned int getpc()
+{
+    return ftell(g_out) - g_sect;
+}
+
 static struct label *s_lbls = NULL;
 static unsigned int s_lblcnt = 0;
 
@@ -62,7 +67,6 @@ void addlabel(char *name, uint64_t pc)
     {
         if (!strcmp(name, s_lbls[i].name))
         {
-            s_lbls[i].undef = 0;
             s_lbls[i].val   = pc;
             return;
         }
@@ -75,16 +79,50 @@ void addlabel(char *name, uint64_t pc)
     };
 }
 
-// Forward reference a label (add it as undefined, define it later)
-void forwardref(char *name)
+// Forward reference to resolve later
+struct forward
 {
-    // TODO: add the offset and size of the forward reference (to resolve later)
+    char *lbl;
+    uint64_t pc;
+    int size;
+};
 
-    s_lbls = realloc(s_lbls, sizeof(struct label) * (s_lblcnt + 1));
-    s_lbls[s_lblcnt++] = (struct label) {
-        .name = name,
-        .undef = 1
+static struct forward *s_forwards = NULL;
+static unsigned int s_forwardcnt = 0;
+
+// Forward reference a label (add it as undefined, define it later)
+void forwardref(char *name, int size)
+{
+    s_forwards = realloc(s_forwards, sizeof(struct forward) * (s_forwardcnt + 1));
+    s_forwards[s_forwardcnt++] = (struct forward) {
+        .lbl = name,
+        .pc  = getpc(),
+        .size = size
     };
+}
+
+struct label *resolvelbl(char *name)
+{
+    for (unsigned int i = 0; i < s_lblcnt; i++)
+    {
+        if (!strcmp(name, s_lbls[i].name))
+            return &s_lbls[i];
+    }
+    return NULL;
+}
+
+// Resolve all forward references
+void resolve_forwardrefs()
+{
+    for (unsigned int i = 0; i < s_forwardcnt; i++)
+    {
+        struct label *lbl = resolvelbl(s_forwards[i].lbl);
+        if (!lbl)
+            printf("Undefined label '%s'\n", s_forwards[i].lbl);
+
+        fseek(g_out, g_sect + s_forwards[i].pc, SEEK_SET);
+        emitv(lbl->val, s_forwards[i].size);
+    }
 }
 
 #define REX_BASE (0b0100 << 4)
@@ -173,8 +211,21 @@ void assem(struct code *code, struct opcode *opcode)
 
     // Displacement
     if (code->mem)
+    {
+        // Use of label as displacement
+        if (code->mem->lbl)
+            forwardref(code->mem->lbl, code->mem->mem.dispsz);
+        
         emitv(code->mem->mem.disp, code->mem->mem.dispsz);
+    }
 
     // Immediate
-    emitv(code->imm, opcode->imm);
+    if (code->imm)
+    {
+        // Need to resolve label later
+        if (code->imm->lbl)
+            forwardref(code->imm->lbl, opcode->imm);
+        
+        emitv(code->imm->imm, opcode->imm);
+    }
 }

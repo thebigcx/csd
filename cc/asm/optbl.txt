@@ -1,9 +1,11 @@
 mnem add
 0x04 ib %al imm8
-0x04 iw %ax imm16
+0x05 iw %ax imm16
+0x05 id %eax imm32
 0x00 /r RM8 R8
 0x01 /r RM16 R16
 0x01 /r RM32 R32
 0x01 +R /r RM64 R64
 0x80 /0 ib RM8 imm8
 0x81 /0 iw RM16 imm16
+0x81 /0 id RM32 imm32

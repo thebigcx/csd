@@ -6,7 +6,8 @@
 FILE *g_in  = NULL;
 FILE *g_out = NULL;
 struct tok g_tok = { 0 };
-int g_mode = 2;
+int g_mode = 8;
+uint64_t g_sect = 0;
 
 int main(int argc, char **argv)
 {

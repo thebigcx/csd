@@ -66,7 +66,7 @@ uint32_t psreg(const char *str)
     return 0;
 }
 
-struct mem psmem()
+struct mem psmem(struct op *op)
 {
     struct mem mem = {
         .base = R_NUL,
@@ -98,7 +98,14 @@ struct mem psmem()
         }
         else if (g_tok.type == T_IDENT)
         {
-            mem.base = OP_REG(psreg(g_tok.sv));
+            uint32_t reg;
+            if (!(reg = psreg(g_tok.sv)))
+            {
+                op->lbl = g_tok.sv;
+                mem.dispsz = 4;
+            }
+            else
+                mem.base = OP_REG(reg);
         }
 
         scan();
@@ -140,10 +147,11 @@ struct op psop()
             printf("Must specify size for memory address.\n");
         }
 
-        return (struct op) {
-            .type = OP_TM | (opsz << 3),
-            .mem  = psmem()
+        struct op op = {
+            .type = OP_TM | (opsz << 3)
         };
+        op.mem = psmem(&op);
+        return op;
     }
 
     // Try register
@@ -153,6 +161,14 @@ struct op psop()
         return (struct op) {
             .type = OP_TR | OP_SIZE(reg),
             .reg  = OP_REG(reg)
+        };
+    }
+    else
+    {
+        // TODO: immediates don't need size: can be truncated and widened where necessary
+        return (struct op) {
+            .type = OP_TI | OP_SD,
+            .lbl  = g_tok.sv
         };
     }
 }
@@ -191,9 +207,20 @@ void dofile()
         while (g_tok.type == T_NL) scan();
         if (g_tok.type == T_EOF) break;
 
-        struct code code = pscode();
-        struct opcode op = matchop(&code);
-        
-        assem(&code, &op);
+        if (g_tok.type == T_COLON)
+        {
+            expect(T_COLON);
+            addlabel(g_tok.sv, getpc());
+            expect(T_IDENT);
+        }
+        else
+        {
+            struct code code = pscode();
+            struct opcode op = matchop(&code);
+            
+            assem(&code, &op);
+        }
     }
+
+    resolve_forwardrefs();
 }

@@ -16,6 +16,7 @@ enum TOKEN
     T_RPAREN,
     T_STAR,
     T_PLUS,
+    T_COLON,
     TOKCNT
 };
 
@@ -43,6 +44,8 @@ struct op
 { 
     uint32_t type; // Operand type and size
 
+    char *lbl; // Label for immediate operand or displacement
+
     // Value
     union
     {
@@ -58,10 +61,8 @@ struct code
     char *mnem; // Mnemonic
     struct op op[3]; // Operands
 
-    struct op *mem, *rm;
-
-    // These fields used to pass info from opcode searcher to assembler
-    uint64_t imm;
+    // Easy access - don't need to search every time
+    struct op *mem, *rm, *imm;
 };
 
 // Label
@@ -69,7 +70,6 @@ struct label
 {
     char *name;
     uint64_t val;
-    int undef; // Undefined
 };
 
 // Low 4 bits of register, high bits are size
@@ -138,6 +138,7 @@ extern FILE *g_in;
 extern FILE *g_out;
 extern struct tok g_tok;
 extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
+extern uint64_t g_sect; // Start of section
 
 // code.c
 struct code pscode(); // Parse code
@@ -147,7 +148,12 @@ void dofile(); // Assemble file
 // asm.c
 void assem(struct code *code, struct opcode *opcode); // Assemble code
 void addlabel(char *name, uint64_t pc);
-void forwardref(char *name);
+void forwardref(char *name, int size);
+struct label *resolvelbl(char *name);
+
+void resolve_forwardrefs();
+
+unsigned int getpc(); // Get program counter
 
 // opcode.c
 struct opcode matchop(struct code *code); // Match opcode from parsed code

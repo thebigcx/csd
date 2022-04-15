@@ -143,7 +143,7 @@ struct opcode matchop(struct code *code)
 
             // Immediate
             if (OP_TYPE(*op) == OP_TI)
-                code->imm = cop->imm;
+                code->imm = cop;
 
             // Memory address
             if (OP_TYPE(cop->type) == OP_TM)
