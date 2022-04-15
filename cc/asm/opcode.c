@@ -19,6 +19,8 @@ void parse_opcodes()
 
     while (getline(&line, &n, f) != -1)
     {
+        if (*line == '\n') continue;
+
         tok = strsep(&line, " ");
 
         if (!strcmp(tok, "mnem"))
@@ -120,6 +122,10 @@ struct opcode matchop(struct code *code)
         struct op *cop;
         for (op = &opc.op[0], cop = &code->op[0]; *op && cop->type; op++, cop++)
         {
+            // Check size (doesn't matter if immediate)
+            if (OP_TYPE(cop->type) != OP_TI && OP_SIZE(cop->type) != OP_SIZE(*op))
+                goto next;
+
             // Specific register
             if (!OP_TYPE(*op))
             {
@@ -128,9 +134,15 @@ struct opcode matchop(struct code *code)
             }
 
             // Size or type doesn't match
-            if (!(OP_TYPE(cop->type) & OP_TYPE(*op))
-                || OP_SIZE(cop->type) != OP_SIZE(*op))
+            if (!(OP_TYPE(cop->type) & OP_TYPE(*op)))
                 goto next;
+
+            // Set the size of immediate to whatever is required
+            if (OP_TYPE(cop->type) == OP_TI)
+            {
+                cop->type &= ~OP_SMASK;
+                cop->type |= OP_SIZE(*op);
+            }
 
             if (g_mode == 8 && OP_SIZE(cop->type) == OP_SW
                 || g_mode == 4 && OP_SIZE(cop->type) == OP_SW

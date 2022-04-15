@@ -183,6 +183,8 @@ void modrmsib(struct modrm *modrm, struct code *code, struct opcode *opcode)
 
 void assem(struct code *code, struct opcode *opcode)
 {
+    unsigned int pc = getpc();
+
     struct modrm modrm = { 0 };
     modrmsib(&modrm, code, opcode);    
 
@@ -214,8 +216,13 @@ void assem(struct code *code, struct opcode *opcode)
     {
         // Use of label as displacement
         if (code->mem->lbl)
-            forwardref(code->mem->lbl, code->mem->mem.dispsz);
-        
+        {
+            if (!strcmp(code->mem->lbl, "."))
+                code->mem->mem.disp = pc;
+            else
+                forwardref(code->mem->lbl, code->mem->mem.dispsz);
+        }
+
         emitv(code->mem->mem.disp, code->mem->mem.dispsz);
     }
 
@@ -224,7 +231,12 @@ void assem(struct code *code, struct opcode *opcode)
     {
         // Need to resolve label later
         if (code->imm->lbl)
-            forwardref(code->imm->lbl, opcode->imm);
+        {
+            if (!strcmp(code->imm->lbl, "."))
+                code->imm->imm = pc;
+            else
+                forwardref(code->imm->lbl, opcode->imm);
+        }
         
         emitv(code->imm->imm, opcode->imm);
     }

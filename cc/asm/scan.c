@@ -23,7 +23,7 @@ const char *tokstrs[] = {
 // Valid character in identifier
 int validid(char c)
 {
-    return isalnum(c) || c == '_';
+    return isalnum(c) || c == '_' || c == '.';
 }
 
 // TODO: turn into a lexing library
@@ -46,7 +46,7 @@ struct tok *scan()
         return &g_tok;
     }
 
-    if (isalpha(c) || c == '_')
+    if (isalpha(c) || c == '_' || c == '.')
     {
         // Keyword or identifier
 
