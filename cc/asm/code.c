@@ -163,14 +163,11 @@ struct op psop()
             .reg  = OP_REG(reg)
         };
     }
-    else
-    {
-        // TODO: immediates don't need size: can be truncated and widened where necessary
-        return (struct op) {
-            .type = OP_TI | OP_SD,
-            .lbl  = g_tok.sv
-        };
-    }
+    
+    return (struct op) {
+        .type = OP_TI | OP_SD,
+        .lbl  = g_tok.sv
+    };
 }
 
 struct code pscode()
@@ -198,6 +195,51 @@ struct code pscode()
     return code;
 }
 
+// Do assembler directive
+int directive()
+{
+    if (!strcmp(g_tok.sv, "code"))
+    {
+        scan();
+        g_mode = g_tok.iv / 8;
+        expect(T_ILIT);
+    }
+    else if (!strcmp(g_tok.sv, "section"))
+    {
+        scan();
+        // TODO: new section
+        expect(T_IDENT);
+    }
+    /*else if (!strcmp(g_tok.sv, "times"))
+    {
+        scan();
+
+        expect(T_ILIT);
+    }*/
+    else if (*g_tok.sv == 'd') // Define byte
+    {
+        char s = *(g_tok.sv + 1);
+
+        switch (s)
+        {
+            case 'b': scan(); emitb(g_tok.iv); break;
+            case 'w': scan(); emitw(g_tok.iv); break;
+            case 'd': scan(); emitd(g_tok.iv); break;
+            case 'q': scan(); emitq(g_tok.iv); break;
+            default: return 0;
+        }
+        expect(T_ILIT);
+    }
+    else if (!strcmp(g_tok.sv, "entry"))
+    {
+        scan();
+        expect(T_IDENT);
+    }
+    else return 0;
+
+    return 1;
+}
+
 // Assemble file
 void dofile()
 {
@@ -213,7 +255,7 @@ void dofile()
             addlabel(g_tok.sv, getpc());
             expect(T_IDENT);
         }
-        else
+        else if (!directive())
         {
             struct code code = pscode();
             struct opcode op = matchop(&code);

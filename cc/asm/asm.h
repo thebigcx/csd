@@ -153,6 +153,13 @@ struct label *resolvelbl(char *name);
 
 void resolve_forwardrefs();
 
+void emitb(uint8_t b); // Emit byte
+void emitw(uint16_t w); // Emit word
+void emitd(uint32_t d); // Emit doubleword
+void emitq(uint64_t q); // Emit quadword
+void emitv(uint64_t v, int size); // Emit bytes (size)
+void emit(uint64_t v); // Emit minimum size
+
 unsigned int getpc(); // Get program counter
 
 // opcode.c

@@ -10,30 +10,30 @@ struct modrm
     int used;
 };
 
-static void emitb(uint8_t b)
+void emitb(uint8_t b)
 {
     fwrite(&b, 1, 1, g_out);
 }
 
-static void emitw(uint16_t w)
+void emitw(uint16_t w)
 {
     emitb(w &  0xff);
     emitb(w >> 8);
 }
 
-static void emitd(uint32_t d)
+void emitd(uint32_t d)
 {
     emitw(d &  0xffff);
     emitw(d >> 16);
 }
 
-static void emitq(uint64_t q)
+void emitq(uint64_t q)
 {
     emitd(q &  0xffffffff);
     emitd(q >> 32);
 }
 
-static void emitv(uint64_t v, int size)
+void emitv(uint64_t v, int size)
 {
     switch (size)
     {
@@ -44,7 +44,7 @@ static void emitv(uint64_t v, int size)
     }
 }
 
-static void emit(uint64_t v)
+void emit(uint64_t v)
 {
          if (v < UINT8_MAX)  emitb(v);
     else if (v < UINT16_MAX) emitw(v);
