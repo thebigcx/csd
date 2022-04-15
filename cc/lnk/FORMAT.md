@@ -1,5 +1,5 @@
 # Binary Format Specification
-### File header structure
+### File structure
 | Section | Description |
 |--|--|
 | main | Contains information about executable such as offsets to sections |
