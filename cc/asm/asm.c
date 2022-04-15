@@ -82,7 +82,7 @@ void addlabel(char *name, uint64_t pc)
 // Forward reference to resolve later
 struct forward
 {
-    char *lbl;
+    char *lbl, *sect;
     uint64_t pc;
     int size;
 };
@@ -95,8 +95,9 @@ void forwardref(char *name, int size)
 {
     s_forwards = realloc(s_forwards, sizeof(struct forward) * (s_forwardcnt + 1));
     s_forwards[s_forwardcnt++] = (struct forward) {
-        .lbl = name,
-        .pc  = getpc(),
+        .lbl  = name,
+        .pc   = getpc(),
+        .sect = getsectname(),
         .size = size
     };
 }
@@ -120,6 +121,7 @@ void resolve_forwardrefs()
         if (!lbl)
             printf("Undefined label '%s'\n", s_forwards[i].lbl);
 
+        setsect(s_forwards[i].sect);
         fseek(g_out, getsect() + s_forwards[i].pc, SEEK_SET);
         emitv(lbl->val, s_forwards[i].size);
     }

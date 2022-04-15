@@ -173,3 +173,4 @@ void binheader(); // Write binary file header
 void binfini();   // Finalize
 void setsect(char *name); // Start new section
 uint64_t getsect();
+char *getsectname();

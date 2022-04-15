@@ -1,7 +1,7 @@
 SRC=main.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
-CFLAGS=-g
+CFLAGS=-g -I..
 
 BIN=lnk
 
