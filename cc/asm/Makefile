@@ -1,7 +1,7 @@
-SRC=main.c code.c asm.c opcode.c scan.c
+SRC=main.c code.c asm.c opcode.c scan.c bin.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
-CFLAGS=-g
+CFLAGS=-g -I..
 
 BIN=asm
 

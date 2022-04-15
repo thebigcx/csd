@@ -138,7 +138,6 @@ extern FILE *g_in;
 extern FILE *g_out;
 extern struct tok g_tok;
 extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
-extern uint64_t g_sect; // Start of section
 
 // code.c
 struct code pscode(); // Parse code
@@ -168,3 +167,9 @@ struct opcode matchop(struct code *code); // Match opcode from parsed code
 // scan.c
 struct tok *scan();
 void expect(int tok);
+
+// bin.c
+void binheader(); // Write binary file header
+void binfini();   // Finalize
+void setsect(char *name); // Start new section
+uint64_t getsect();

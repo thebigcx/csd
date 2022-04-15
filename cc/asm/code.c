@@ -207,7 +207,7 @@ int directive()
     else if (!strcmp(g_tok.sv, "section"))
     {
         scan();
-        // TODO: new section
+        setsect(g_tok.sv);
         expect(T_IDENT);
     }
     /*else if (!strcmp(g_tok.sv, "times"))
@@ -233,6 +233,7 @@ int directive()
     else if (!strcmp(g_tok.sv, "entry"))
     {
         scan();
+        //setentry(g_tok.sv);
         expect(T_IDENT);
     }
     else return 0;
@@ -243,6 +244,8 @@ int directive()
 // Assemble file
 void dofile()
 {
+    binheader();
+
     scan();
     while (1)
     {
@@ -265,4 +268,5 @@ void dofile()
     }
 
     resolve_forwardrefs();
+    binfini();
 }

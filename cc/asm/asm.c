@@ -54,7 +54,7 @@ void emit(uint64_t v)
 
 unsigned int getpc()
 {
-    return ftell(g_out) - g_sect;
+    return ftell(g_out) - getsect();
 }
 
 static struct label *s_lbls = NULL;
@@ -120,7 +120,7 @@ void resolve_forwardrefs()
         if (!lbl)
             printf("Undefined label '%s'\n", s_forwards[i].lbl);
 
-        fseek(g_out, g_sect + s_forwards[i].pc, SEEK_SET);
+        fseek(g_out, getsect() + s_forwards[i].pc, SEEK_SET);
         emitv(lbl->val, s_forwards[i].size);
     }
 }
