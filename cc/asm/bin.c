@@ -35,7 +35,7 @@ void binfini()
     s_main.datsz = ftell(g_out) - s_datoff;
 
     s_main.txtrel = ftell(g_out);
-    s_main.datrel = s_main.txtrel + sizeof(struct rel); // TODO: number of relocs
+    s_main.datrel = s_main.txtrel + sizeof(struct rel) * g_forwardcnt;
 
     s_main.symtab = s_main.datrel; // TODO: number of relocs
     s_main.strtab = s_main.symtab + labelcnt() * sizeof(struct symbol);
@@ -44,13 +44,24 @@ void binfini()
     fwrite(&s_main, sizeof(struct bin_main), 1, g_out);
 
     fseek(g_out, s_main.txtrel, SEEK_SET);
-    struct rel r = {
-        .addend = 4,
-        .addr = 0x20,
-        .size = 8,
-        .sym = 0
-    };
-    fwrite(&r, sizeof(struct rel), 1, g_out);
+
+    for (unsigned int i = 0; i < g_forwardcnt; i++)
+    {
+        char *lbl = g_forwards[i].lbl;
+
+        // Find symbol
+        unsigned int sym;
+        for (sym = 0; sym < labelcnt(); sym++)
+            if (!strcmp(lbl, getlbls()[sym].name)) break;
+
+        // Write relocation
+        struct rel r = {
+            .addr = g_forwards[i].pc,
+            .size = g_forwards[i].size,
+            .sym  = sym
+        };
+        fwrite(&r, sizeof(struct rel), 1, g_out);
+    }
 
     fseek(g_out, s_main.symtab, SEEK_SET);
     

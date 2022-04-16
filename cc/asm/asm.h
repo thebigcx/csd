@@ -74,6 +74,14 @@ struct label
     unsigned int idx; // For the binary output
 };
 
+// Forward reference to resolve later (or add as relocation)
+struct forward
+{
+    char *lbl, *sect;
+    uint64_t pc;
+    int size;
+};
+
 // Low 4 bits of register, high bits are size
 #define R_AX  0b0000
 #define R_CX  0b0001
@@ -140,6 +148,8 @@ extern FILE *g_in;
 extern FILE *g_out;
 extern struct tok g_tok;
 extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
+extern struct forward *g_forwards;
+extern unsigned int g_forwardcnt;
 
 // code.c
 struct code pscode(); // Parse code

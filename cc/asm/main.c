@@ -7,6 +7,8 @@ FILE *g_in  = NULL;
 FILE *g_out = NULL;
 struct tok g_tok = { 0 };
 int g_mode = 8;
+struct forward *g_forwards = NULL;
+unsigned int g_forwardcnt = 0;
 
 int main(int argc, char **argv)
 {

@@ -79,22 +79,11 @@ void addlabel(char *name, uint64_t pc)
     };
 }
 
-// Forward reference to resolve later
-struct forward
-{
-    char *lbl, *sect;
-    uint64_t pc;
-    int size;
-};
-
-static struct forward *s_forwards = NULL;
-static unsigned int s_forwardcnt = 0;
-
 // Forward reference a label (add it as undefined, define it later)
 void forwardref(char *name, int size)
 {
-    s_forwards = realloc(s_forwards, sizeof(struct forward) * (s_forwardcnt + 1));
-    s_forwards[s_forwardcnt++] = (struct forward) {
+    g_forwards = realloc(g_forwards, sizeof(struct forward) * (g_forwardcnt + 1));
+    g_forwards[g_forwardcnt++] = (struct forward) {
         .lbl  = name,
         .pc   = getpc(),
         .sect = getsectname(),
@@ -126,15 +115,15 @@ unsigned int labelcnt()
 // Resolve all forward references
 void resolve_forwardrefs()
 {
-    for (unsigned int i = 0; i < s_forwardcnt; i++)
+    for (unsigned int i = 0; i < g_forwardcnt; i++)
     {
-        struct label *lbl = resolvelbl(s_forwards[i].lbl);
+        struct label *lbl = resolvelbl(g_forwards[i].lbl);
         if (!lbl)
-            printf("Undefined label '%s'\n", s_forwards[i].lbl);
+            printf("Undefined label '%s'\n", g_forwards[i].lbl);
 
-        setsect(s_forwards[i].sect);
-        fseek(g_out, getsect() + s_forwards[i].pc, SEEK_SET);
-        emitv(lbl->val, s_forwards[i].size);
+        setsect(g_forwards[i].sect);
+        fseek(g_out, getsect() + g_forwards[i].pc, SEEK_SET);
+        emitv(lbl->val, g_forwards[i].size);
     }
 }
 

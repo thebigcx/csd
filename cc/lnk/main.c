@@ -8,6 +8,7 @@
 FILE *g_in = NULL;
 FILE *g_out = NULL;
 
+static uint64_t s_base = 0; // Base address of file
 static int s_bin = 0; // Flat binary output
 
 // Read the contents of a file: returns malloc'd buffer
@@ -34,11 +35,23 @@ void do_binary()
 
     fwrite(buf + sizeof(struct bin_main), main->txtsz, 1, g_out);
     fwrite(buf + sizeof(struct bin_main) + main->txtsz, main->datsz, 1, g_out);
+
+    struct rel *rels = (struct rel*)(buf + main->txtrel);
+    struct symbol *syms = (struct symbol*)(buf + main->symtab);
+
+    // Do text relocations
+    for (unsigned int i = 0; i < (main->datrel - main->txtrel) / sizeof(struct rel); i++)
+    {
+        uint64_t val = syms[rels[i].sym].value + s_base + rels[i].addend;
+        fseek(g_out, rels[i].addr, SEEK_SET);
+        fwrite(&val, rels[i].size, 1, g_out);
+    }
 }
 
 int main(int argc, char **argv)
 {
     char *input = NULL;
+    s_base = 0x7c00; // TODO: TEMP
 
     // Parse command line arguments
     for (unsigned int i = 1; i < argc; i++)
