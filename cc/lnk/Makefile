@@ -12,3 +12,9 @@ $(BIN): $(OBJ)
 
 %.o: %.c
 	gcc -c $< -o $@ $(CFLAGS)
+
+install:
+	cp $(BIN) ~/opt/bin/
+
+clean:
+	rm $(BIN) $(OBJ)
