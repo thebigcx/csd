@@ -15,6 +15,8 @@ struct bin_main
     entry: u64,
     txtsz: u32,
     datsz: u32,
+    txtrel: u32,
+    datrel: u32,
     symtab: u32,
     strtab: u32
 };
@@ -25,6 +27,8 @@ struct bin_main
 | entry | 8 | Program entry point |
 | txtsz | 4 | Text section size in bytes |
 | datsz | 4 | Data section size in bytes |
+| txtrel | 4 | Text section relocations (byte offset) |
+| datrel | 4 | Data section relocations (byte offset) |
 | symtab | 4 | Offset in file to symbol table |
 | strtab | 4 | Offset in file to string table |
 

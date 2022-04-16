@@ -34,11 +34,23 @@ void binfini()
     s_main.txtsz = s_datoff - sizeof(struct bin_main);
     s_main.datsz = ftell(g_out) - s_datoff;
 
-    s_main.symtab = ftell(g_out);
+    s_main.txtrel = ftell(g_out);
+    s_main.datrel = s_main.txtrel + sizeof(struct rel); // TODO: number of relocs
+
+    s_main.symtab = s_main.datrel; // TODO: number of relocs
     s_main.strtab = s_main.symtab + labelcnt() * sizeof(struct symbol);
 
     fseek(g_out, 0, SEEK_SET);
     fwrite(&s_main, sizeof(struct bin_main), 1, g_out);
+
+    fseek(g_out, s_main.txtrel, SEEK_SET);
+    struct rel r = {
+        .addend = 4,
+        .addr = 0x20,
+        .size = 8,
+        .sym = 0
+    };
+    fwrite(&r, sizeof(struct rel), 1, g_out);
 
     fseek(g_out, s_main.symtab, SEEK_SET);
     

@@ -40,12 +40,47 @@ int main(int argc, char **argv)
     printf("Symbols:\n");
 
     fseek(f, main.symtab, SEEK_SET);
-    
-    struct symbol s;
-    for (unsigned int i = 0; i < main.strtab - main.symtab; i += sizeof(struct symbol))
+
+    size_t symtabsz = main.strtab - main.symtab;
+    struct symbol *syms = malloc(symtabsz);
+    fread(syms, symtabsz, 1, f);
+
+    for (unsigned int i = 0; i < symtabsz / sizeof(struct symbol); i++)
     {
-        fread(&s, sizeof(struct symbol), 1, f);
-        printf("\t%s = 0x%lx\n", strtab + s.name, s.value);
+        printf("\t%s = 0x%lx\n", strtab + syms[i].name, syms[i].value);
+    }
+
+    printf("Text relocations:\n");
+    
+    fseek(f, main.txtrel, SEEK_SET);
+
+    struct rel r;
+    for (unsigned int i = 0; i < main.datrel - main.txtrel; i += sizeof(struct rel))
+    {
+        fread(&r, sizeof(struct rel), 1, f);
+
+        printf("\tat text + 0x%lx: %s ", r.addr, strtab + syms[r.sym].name);
+        if (r.addend < 0)
+            printf("- %ld ", -r.addend);
+        else
+            printf("+ %ld ", r.addend);
+
+        printf("(Size %d)\n", r.size);
+    }
+
+    printf("Data relocations:\n");
+
+    for (unsigned int i = 0; i < main.symtab - main.datrel; i += sizeof(struct rel))
+    {
+        fread(&r, sizeof(struct rel), 1, f);
+
+        printf("\tat data + 0x%lx: %s ", r.addr, strtab + syms[r.sym].name);
+        if (r.addend < 0)
+            printf("- %ld ", -r.addend);
+        else
+            printf("+ %ld ", r.addend);
+
+        printf("(Size %d)\n", r.size);
     }
 
     fclose(f);
