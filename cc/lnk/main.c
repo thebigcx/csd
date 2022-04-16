@@ -51,7 +51,6 @@ void do_binary()
 int main(int argc, char **argv)
 {
     char *input = NULL;
-    s_base = 0x7c00; // TODO: TEMP
 
     // Parse command line arguments
     for (unsigned int i = 1; i < argc; i++)
@@ -62,6 +61,10 @@ int main(int argc, char **argv)
             switch (*(++arg))
             {
                 case 'b': s_bin = 1; break;
+                case 'a':
+                    arg = argv[++i];
+                    s_base = strtoull(arg, NULL, 16);
+                    break;
             }
         }
         else

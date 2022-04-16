@@ -18,7 +18,8 @@ struct bin_main
     txtrel: u32,
     datrel: u32,
     symtab: u32,
-    strtab: u32
+    strtab: u32,
+    base: u64
 };
 ```
 
@@ -31,6 +32,7 @@ struct bin_main
 | datrel | 4 | Data section relocations (byte offset) |
 | symtab | 4 | Offset in file to symbol table |
 | strtab | 4 | Offset in file to string table |
+| base | 8 | Base load address of binary |
 
 ### Symbol structure
 ```c

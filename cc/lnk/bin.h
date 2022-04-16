@@ -10,8 +10,10 @@ struct bin_main
     uint32_t datsz;  // Data section size
     uint32_t txtrel; // Text section relocations
     uint32_t datrel; // Data section relocations
-    uint32_t symtab; // Symbol table
-    uint32_t strtab; // String table
+    uint32_t symtab; // Symbol table offset
+    uint32_t strtab; // String table offset
+
+    uint64_t base;   // Base address
 };
 
 // Symbol structure
