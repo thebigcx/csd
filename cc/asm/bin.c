@@ -28,13 +28,47 @@ void setsect(char *name)
 
 void binfini()
 {
+    // Write the main header
     fseek(g_out, 0, SEEK_END);
 
     s_main.txtsz = s_datoff - sizeof(struct bin_main);
     s_main.datsz = ftell(g_out) - s_datoff;
 
+    s_main.symtab = ftell(g_out);
+    s_main.strtab = s_main.symtab + labelcnt() * sizeof(struct symbol);
+
     fseek(g_out, 0, SEEK_SET);
     fwrite(&s_main, sizeof(struct bin_main), 1, g_out);
+
+    fseek(g_out, s_main.symtab, SEEK_SET);
+    
+    for (unsigned int i = 0; i < s_main.strtab - s_main.symtab; i++)
+        fputc(0, g_out);
+
+    // Write the strings
+    fputc(0, g_out);
+    for (unsigned int i = 0; i < labelcnt(); i++)
+    {
+        struct label *l = &getlbls()[i];
+        l->idx = ftell(g_out) - s_main.strtab;
+
+        fputs(l->name, g_out);
+        fputc(0, g_out);
+    }
+
+    // Write the symbols
+    fseek(g_out, s_main.symtab, SEEK_SET);
+
+    for (unsigned int i = 0; i < labelcnt(); i++)
+    {
+        struct label *l = &getlbls()[i];
+
+        struct symbol s = {
+            .name = l->idx,
+            .value = l->val
+        };
+        fwrite(&s, sizeof(struct symbol), 1, g_out);
+    }
 }
 
 uint64_t getsect()

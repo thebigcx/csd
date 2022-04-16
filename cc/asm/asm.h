@@ -70,6 +70,8 @@ struct label
 {
     char *name;
     uint64_t val;
+
+    unsigned int idx; // For the binary output
 };
 
 // Low 4 bits of register, high bits are size
@@ -149,6 +151,9 @@ void assem(struct code *code, struct opcode *opcode); // Assemble code
 void addlabel(char *name, uint64_t pc);
 void forwardref(char *name, int size);
 struct label *resolvelbl(char *name);
+
+struct label *getlbls();
+unsigned int labelcnt();
 
 void resolve_forwardrefs();
 

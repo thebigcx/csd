@@ -1,7 +1,7 @@
 SRC=readbin.c
 TARG=$(patsubst %.c, %, $(SRC))
 
-CFLAGS=-I..
+CFLAGS=-g -I..
 
 all: $(TARG)
 

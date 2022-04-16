@@ -112,6 +112,17 @@ struct label *resolvelbl(char *name)
     return NULL;
 }
 
+struct label *getlbls()
+{
+    return s_lbls;
+}
+
+// Get number of labels
+unsigned int labelcnt()
+{
+    return s_lblcnt;
+}
+
 // Resolve all forward references
 void resolve_forwardrefs()
 {
