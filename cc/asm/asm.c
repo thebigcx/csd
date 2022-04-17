@@ -226,7 +226,7 @@ void assem(struct code *code, struct opcode *opcode)
             if (!strcmp(code->mem->lbl, "."))
                 code->mem->mem.disp = pc;
             else
-                forwardref(code->mem->lbl, code->mem->mem.dispsz);
+                forwardref(strdup(code->mem->lbl), code->mem->mem.dispsz);
         }
 
         emitv(code->mem->mem.disp, code->mem->mem.dispsz);
@@ -241,7 +241,7 @@ void assem(struct code *code, struct opcode *opcode)
             if (!strcmp(code->imm->lbl, "."))
                 code->imm->imm = pc;
             else
-                forwardref(code->imm->lbl, opcode->imm);
+                forwardref(strdup(code->imm->lbl), opcode->imm);
         }
         
         emitv(code->imm->imm, opcode->imm);

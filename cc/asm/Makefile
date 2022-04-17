@@ -17,6 +17,7 @@ $(BIN): $(OBJ)
 
 install:
 	cp $(BIN) ~/opt/bin/
+	cp optbl.txt ~/opt/share/
 
 clean:
 	rm $(BIN) $(OBJ)

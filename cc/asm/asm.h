@@ -155,6 +155,7 @@ extern unsigned int g_forwardcnt;
 extern unsigned int g_line;
 
 void error(const char *msg, ...);
+void general_error(const char *msg, ...); // No specific line number or file
 
 // code.c
 struct code pscode(); // Parse code

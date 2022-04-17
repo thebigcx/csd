@@ -45,6 +45,18 @@ void error(const char *msg, ...)
     exit(-1);
 }
 
+void general_error(const char *msg, ...)
+{
+    printf("\x1b[1;31mError\x1b[39m: \x1b[0m");
+
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    exit(-1);
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -75,6 +87,7 @@ int main(int argc, char **argv)
 
     dofile();
 
+    free(oname);
     fclose(g_in);
     fclose(g_out);
     return 0;

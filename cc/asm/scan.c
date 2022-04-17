@@ -29,6 +29,13 @@ int validid(char c)
 // TODO: turn into a lexing library
 struct tok *scan()
 {
+    // Free old string value
+    if (g_tok.sv)
+    {
+        free(g_tok.sv);
+        g_tok.sv = NULL;
+    }
+
     char buf[32] = { 0 };
 
     char c;

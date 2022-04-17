@@ -101,7 +101,7 @@ struct mem psmem(struct op *op)
             uint32_t reg;
             if (!(reg = psreg(g_tok.sv)))
             {
-                op->lbl = g_tok.sv;
+                op->lbl = strdup(g_tok.sv);
                 mem.dispsz = 4;
             }
             else
@@ -123,8 +123,9 @@ uint32_t pssize(const char *str)
 struct op psop()
 {
     // Size attribute (u8, u16, etc.)
-    uint32_t opsz = pssize(g_tok.sv);
-    if (opsz) scan();
+    uint32_t opsz = 0;
+    if (g_tok.type == T_IDENT)
+        if ((opsz = pssize(g_tok.sv))) scan();
 
     // Immediate
     if (g_tok.type == T_ILIT)
@@ -263,7 +264,7 @@ void dofile()
         if (g_tok.type == T_COLON)
         {
             expect(T_COLON);
-            addlabel(g_tok.sv, getpc());
+            addlabel(strdup(g_tok.sv), getpc());
             expect(T_IDENT);
         }
         else if (!directive())
@@ -272,6 +273,11 @@ void dofile()
             struct opcode op = matchop(&code);
             
             assem(&code, &op);
+
+            free(code.mnem);
+            if (code.op[0].lbl) free(code.op[0].lbl);
+            if (code.op[1].lbl) free(code.op[1].lbl);
+            if (code.op[2].lbl) free(code.op[2].lbl);
         }
     }
 

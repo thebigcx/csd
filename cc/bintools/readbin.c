@@ -83,6 +83,8 @@ int main(int argc, char **argv)
         printf("(Size %d)\n", r.size);
     }
 
+    free(syms);
+    free(strtab);
     fclose(f);
     return 0;
 }

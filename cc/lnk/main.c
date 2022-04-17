@@ -46,6 +46,8 @@ void do_binary()
         fseek(g_out, rels[i].addr, SEEK_SET);
         fwrite(&val, rels[i].size, 1, g_out);
     }
+
+    free(buf);
 }
 
 int main(int argc, char **argv)
@@ -91,6 +93,7 @@ int main(int argc, char **argv)
     if (dot) *dot = 0;
 
     g_out = fopen(out, "w+");
+    free(out);
 
     if (s_bin)
         do_binary();

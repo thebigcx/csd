@@ -3,13 +3,26 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 static struct opcode *s_ops = NULL;
 static unsigned int s_opcnt = 0;
 
 void parse_opcodes()
 {
-    FILE *f = fopen("optbl.txt", "r");
+    // Construct path to optbl.txt
+    char *home = getenv("HOME");
+    const char *opt = "/opt/share/optbl.txt";
+    char *path = calloc(1, strlen(home) + strlen(opt) + 1);
+
+    strcat(path, home);
+    strcat(path, opt);
+
+    FILE *f = fopen(path, "r");
+    if (!f)
+        general_error("Could not open %s: %s\n", realpath(path, NULL), strerror(errno));
+
+    free(path);
 
     char *line = NULL;
     size_t n;
@@ -21,12 +34,13 @@ void parse_opcodes()
     {
         if (*line == '\n') continue;
 
-        tok = strsep(&line, " ");
+        char *strp = line;
+        tok = strsep(&strp, " ");
 
         if (!strcmp(tok, "mnem"))
         {
             // New mnemonic info
-            tok = strsep(&line, " ");
+            tok = strsep(&strp, " ");
             *strchr(tok, '\n') = 0;
 
             mnem = strdup(tok);
@@ -40,7 +54,7 @@ void parse_opcodes()
             op.po = strtol(tok, NULL, 16);
 
             uint32_t *oper = &op.op[0]; // Current operand
-            while ((tok = strsep(&line, " ")))
+            while ((tok = strsep(&strp, " ")))
             {
                 if (*tok == '/')
                 {
@@ -89,13 +103,19 @@ void parse_opcodes()
                 {
                     *oper++ = psreg(++tok);
                 }
+                else
+                    general_error("Malformed ~/opt/share/optbl.txt file. Please reinstall assembler or redownload file.\n");
             }
 
             s_ops = realloc(s_ops, sizeof(struct opcode) * (s_opcnt + 1));
             s_ops[s_opcnt++] = op;
         }
+
+        free(line);
+        line = NULL;
     }
 
+    free(line);
     fclose(f);
 }
 
@@ -179,6 +199,7 @@ struct opcode matchop(struct code *code)
         continue;
     }
 
-    // Doesn't exist
-    printf("No such instruction.\n");
+    // Instruction is not defined
+    error("No such instruction\n");
+    __builtin_unreachable();
 }
