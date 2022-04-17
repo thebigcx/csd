@@ -166,7 +166,7 @@ struct op psop()
     
     return (struct op) {
         .type = OP_TI | OP_SD,
-        .lbl  = g_tok.sv
+        .lbl  = strdup(g_tok.sv)
     };
 }
 
@@ -247,7 +247,16 @@ int directive()
     {
         // Set this symbol as global
         scan();
-        resolvelbl(g_tok.sv)->flags |= S_GLOB;
+        
+        if (g_tok.type != T_IDENT)
+            expect(T_IDENT); // Expectation failed
+
+        // TODO: forward declare as global
+        struct label *l = resolvelbl(g_tok.sv);
+        if (!l)
+            error("No such symbol '%s'\n", g_tok.sv);
+
+        l->flags |= S_GLOB;
         expect(T_IDENT);
     }
     else if (!strcmp(g_tok.sv, "extern"))

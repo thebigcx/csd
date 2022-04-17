@@ -24,7 +24,7 @@ struct symbol
 {
     uint32_t name;
     uint64_t value;
-    uint8_t  flags;
+    uint8_t  flags; // TODO: text/data symbols flag
 };
 
 #define R_PCREL (1 << 0)
