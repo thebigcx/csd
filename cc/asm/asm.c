@@ -87,7 +87,8 @@ void forwardref(char *name, int size)
         .lbl  = name,
         .pc   = getpc(),
         .sect = getsectname(),
-        .size = size
+        .size = size,
+        .line = g_line
     };
 }
 
@@ -117,9 +118,12 @@ void resolve_forwardrefs()
 {
     for (unsigned int i = 0; i < g_forwardcnt; i++)
     {
+        // Set line number to the forward reference
+        g_line = g_forwards[i].line;
+
         struct label *lbl = resolvelbl(g_forwards[i].lbl);
         if (!lbl)
-            printf("Undefined label '%s'\n", g_forwards[i].lbl);
+            error("Undefined label '%s'\n", g_forwards[i].lbl);
 
         setsect(g_forwards[i].sect);
         fseek(g_out, getsect() + g_forwards[i].pc, SEEK_SET);

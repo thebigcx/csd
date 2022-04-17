@@ -8,8 +8,8 @@ enum TOKEN
     T_IDENT,
     T_NL, // Newline
     T_EOF,
-    T_COMMA,
     T_ILIT,
+    T_COMMA,
     T_LBRACK,
     T_RBRACK,
     T_LPAREN,
@@ -80,6 +80,7 @@ struct forward
     char *lbl, *sect;
     uint64_t pc;
     int size;
+    int line; // Line number (for debugging)
 };
 
 // Low 4 bits of register, high bits are size
@@ -144,12 +145,16 @@ struct opcode
     uint8_t imm; // Immediate size in bytes (0 if unused)
 };
 
+extern char *g_infile; // Input file name
 extern FILE *g_in;
 extern FILE *g_out;
 extern struct tok g_tok;
 extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
 extern struct forward *g_forwards;
 extern unsigned int g_forwardcnt;
+extern unsigned int g_line;
+
+void error(const char *msg, ...);
 
 // code.c
 struct code pscode(); // Parse code

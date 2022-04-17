@@ -57,12 +57,8 @@ struct tok *scan()
 
         ungetc(c, g_in); // Last character was not part of identifier
 
-        //if (!strcmp("extern", buf)) g_tok.type = T_EXTERN;
-        //else
-        {
-            g_tok.type = T_IDENT;
-            g_tok.sv = strdup(buf);
-        }
+        g_tok.type = T_IDENT;
+        g_tok.sv = strdup(buf);
     }
     else if (isdigit(c))
     {
@@ -80,14 +76,14 @@ struct tok *scan()
     }
     else
     {
-        // Nice algorithm to find the longest matching token string.
-        // For e.g.: - will be T_MINUS, whereas -> will be T_ARROW
+        // Best-match algorithm to find the longest matching token string
 
         int n = 0, t = -1;
 
+        // Start at T_COMMA: skip tokens without specific char sequences (T_ID, T_ILIT)
     nextch:
         buf[n++] = c;
-        for (int i = 0; i < TOKCNT; i++)
+        for (int i = T_COMMA; i < TOKCNT; i++)
         {
             if (!strncmp(buf, tokstrs[i], n))
             {
@@ -96,6 +92,9 @@ struct tok *scan()
                 goto nextch;
             }
         }
+
+        if (t == -1)
+            error("Unexpected token '%s'\n", buf);
 
         ungetc(c, g_in);
         g_tok.type = t;
@@ -106,7 +105,7 @@ void expect(int tok)
 {
     if (g_tok.type != tok)
     {
-        printf("Expected '%s', got '%s'\n", tokstrs[tok], tokstrs[g_tok.type]);
+        error("Expected '%s', got '%s'\n", tokstrs[tok], tokstrs[g_tok.type]);
     }
     scan();
 }

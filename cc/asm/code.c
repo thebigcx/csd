@@ -142,10 +142,7 @@ struct op psop()
     else if (g_tok.type == T_LBRACK)
     {
         if (!opsz)
-        {
-            // TODO: error
-            printf("Must specify size for memory address.\n");
-        }
+            error("Must specify size for memory address.\n");
 
         struct op op = {
             .type = OP_TM | (opsz << 3)
@@ -200,12 +197,17 @@ int directive()
 {
     if (!strcmp(g_tok.sv, "code"))
     {
+        // Set the operation mode (16/32/64)
         scan();
         g_mode = g_tok.iv / 8;
         expect(T_ILIT);
+
+        if (g_tok.iv != 16 && g_tok.iv != 32 && g_tok.iv != 64)
+            error("Invalid operation mode '%d'\n", g_tok.iv);
     }
     else if (!strcmp(g_tok.sv, "section"))
     {
+        // Set the current section
         scan();
         setsect(g_tok.sv);
         expect(T_IDENT);
@@ -216,8 +218,9 @@ int directive()
 
         expect(T_ILIT);
     }*/
-    else if (*g_tok.sv == 'd') // Define byte
+    else if (*g_tok.sv == 'd')
     {
+        // Define 1, 2, 4, 8 bytes
         char s = *(g_tok.sv + 1);
 
         switch (s)
@@ -232,6 +235,7 @@ int directive()
     }
     else if (!strcmp(g_tok.sv, "entry"))
     {
+        // Set the entry point of executable
         scan();
         //setentry(g_tok.sv);
         expect(T_IDENT);
@@ -249,7 +253,11 @@ void dofile()
     scan();
     while (1)
     {
-        while (g_tok.type == T_NL) scan();
+        while (g_tok.type == T_NL)
+        {
+            g_line++;
+            scan();
+        }
         if (g_tok.type == T_EOF) break;
 
         if (g_tok.type == T_COLON)
