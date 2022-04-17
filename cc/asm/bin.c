@@ -56,9 +56,10 @@ void binfini()
 
         // Write relocation
         struct rel r = {
-            .addr = g_forwards[i].pc,
-            .size = g_forwards[i].size,
-            .sym  = sym
+            .addr  = g_forwards[i].pc,
+            .size  = g_forwards[i].size,
+            .sym   = sym,
+            .flags = g_forwards[i].flags
         };
         fwrite(&r, sizeof(struct rel), 1, g_out);
     }
@@ -88,8 +89,10 @@ void binfini()
 
         struct symbol s = {
             .name = l->idx,
-            .value = l->val
+            .value = l->val,
+            .flags = l->flags
         };
+
         fwrite(&s, sizeof(struct symbol), 1, g_out);
     }
 }

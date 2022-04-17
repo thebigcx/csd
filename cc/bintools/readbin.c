@@ -47,7 +47,12 @@ int main(int argc, char **argv)
 
     for (unsigned int i = 0; i < symtabsz / sizeof(struct symbol); i++)
     {
-        printf("\t%s = 0x%lx\n", strtab + syms[i].name, syms[i].value);
+        printf("\t%s = 0x%lx", strtab + syms[i].name, syms[i].value);
+
+        if (syms[i].flags & S_UNDF) printf(" UNDF");
+        if (syms[i].flags & S_GLOB) printf(" GLOB");
+
+        printf("\n");
     }
 
     printf("Text relocations:\n");

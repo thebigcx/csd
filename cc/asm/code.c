@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include <lnk/bin.h>
+
 struct regstr
 {
     const char *str;
@@ -239,6 +241,20 @@ int directive()
         // Set the entry point of executable
         scan();
         //setentry(g_tok.sv);
+        expect(T_IDENT);
+    }
+    else if (!strcmp(g_tok.sv, "global"))
+    {
+        // Set this symbol as global
+        scan();
+        resolvelbl(g_tok.sv)->flags |= S_GLOB;
+        expect(T_IDENT);
+    }
+    else if (!strcmp(g_tok.sv, "extern"))
+    {
+        // External symbol
+        scan();
+        addextern(strdup(g_tok.sv));
         expect(T_IDENT);
     }
     else return 0;

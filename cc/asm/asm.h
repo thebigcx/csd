@@ -70,6 +70,7 @@ struct label
 {
     char *name;
     uint64_t val;
+    uint8_t flags;
 
     unsigned int idx; // For the binary output
 };
@@ -80,6 +81,8 @@ struct forward
     char *lbl, *sect;
     uint64_t pc;
     int size;
+    uint8_t flags;
+
     int line; // Line number (for debugging)
 };
 
@@ -165,6 +168,7 @@ void dofile(); // Assemble file
 // asm.c
 void assem(struct code *code, struct opcode *opcode); // Assemble code
 void addlabel(char *name, uint64_t pc);
+void addextern(char *name); // Add an external symbol
 void forwardref(char *name, int size);
 struct label *resolvelbl(char *name);
 

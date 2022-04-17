@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lnk/bin.h>
+
 struct modrm
 {
     uint8_t mod, reg, rm;
@@ -60,6 +62,12 @@ unsigned int getpc()
 static struct label *s_lbls = NULL;
 static unsigned int s_lblcnt = 0;
 
+static void addlabel_impl(struct label l)
+{
+    s_lbls = realloc(s_lbls, sizeof(struct label) * (s_lblcnt + 1));
+    s_lbls[s_lblcnt++] = l;
+}
+
 // Add a label to the list (or define an undefined one)
 void addlabel(char *name, uint64_t pc)
 {
@@ -72,11 +80,18 @@ void addlabel(char *name, uint64_t pc)
         }
     }
 
-    s_lbls = realloc(s_lbls, sizeof(struct label) * (s_lblcnt + 1));
-    s_lbls[s_lblcnt++] = (struct label) {
+    addlabel_impl((struct label) {
         .name = name,
         .val  = pc
-    };
+    });
+}
+
+void addextern(char *name)
+{
+    addlabel_impl((struct label) {
+        .name  = name,
+        .flags = S_UNDF
+    });
 }
 
 // Forward reference a label (add it as undefined, define it later)
