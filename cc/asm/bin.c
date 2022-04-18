@@ -4,35 +4,61 @@
 #include <string.h>
 
 static struct bin_main s_main = { 0 };
-static uint64_t s_sectoff = 0;
-static uint64_t s_datoff = 0;
+/*static uint64_t s_sectoff = 0;
+static uint64_t s_datoff = 0;*/
+
+static struct sect s_sects[3] = { 0 };
+static int s_sectidx = -1; // Current section index
 
 void binheader()
 {
     fwrite(&s_main, sizeof(struct bin_main), 1, g_out);
-    setsect("text");
 }
 
-void setsect(char *name)
+void endsect()
 {
-    if (!strcmp(name, "text"))
-        s_sectoff = sizeof(struct bin_main);
-    else if (!strcmp(name, "data"))
+    // Set size of current section
+    if (s_sectidx != -1)
     {
-        if (s_datoff)
-            s_sectoff = s_datoff;
-        else
-            s_sectoff = s_datoff = ftell(g_out);
+        struct sect *pre = &s_sects[s_sectidx];
+        pre->size = ftell(g_out) - pre->offset;
     }
+}
+
+void setsect(int type)
+{
+    s_sectidx = type;
+}
+
+// TODO: check it goes text, data, bss
+void startsect(char *name)
+{
+    endsect();
+
+    int type;
+    if (!strcmp(name, "text"))      type = SE_TEXT;
+    else if (!strcmp(name, "data")) type = SE_DATA;
+    else if (!strcmp(name, "bss"))  type = SE_BSS;
+    else
+        error("Invalid section name '%s'\n", name);
+
+    s_sects[type] = (struct sect) {
+        .offset = ftell(g_out),
+        .type   = type
+    };
+    s_sectidx = type;
 }
 
 void binfini()
 {
+    endsect();
+
     // Write the main header
     fseek(g_out, 0, SEEK_END);
 
-    s_main.txtsz = s_datoff - sizeof(struct bin_main);
-    s_main.datsz = ftell(g_out) - s_datoff;
+    s_main.txtsz = s_sects[SE_TEXT].size;
+    s_main.datsz = s_sects[SE_DATA].size;
+    s_main.bss   = g_bss;
 
     s_main.txtrel = ftell(g_out);
     s_main.datrel = s_main.txtrel + sizeof(struct rel) * g_forwardcnt;
@@ -97,13 +123,7 @@ void binfini()
     }
 }
 
-uint64_t getsect()
+struct sect *getsect()
 {
-    return s_sectoff;
-}
-
-char *getsectname()
-{
-    if (s_sectoff == sizeof(struct bin_main)) return "text";
-    else return "data";
+    return &s_sects[s_sectidx];
 }

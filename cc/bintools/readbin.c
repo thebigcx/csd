@@ -36,6 +36,7 @@ int main(int argc, char **argv)
     printf("\tText size: 0x%x\n", main.txtsz);
     printf("\tData offset: 0x%lx\n", sizeof(struct bin_main) + main.txtsz);
     printf("\tData size: 0x%x\n", main.datsz);
+    printf("\tBSS size: 0x%x\n", main.bss);
 
     printf("Symbols:\n");
 

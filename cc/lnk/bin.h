@@ -14,10 +14,14 @@ struct bin_main
     uint32_t strtab; // String table offset
 
     uint64_t base;   // Base address
+    uint32_t bss;    // BSS size
 };
 
 #define S_UNDF (1 << 0)
 #define S_GLOB (1 << 1)
+#define S_TEXT (1 << 2)
+#define S_DATA (1 << 3)
+#define S_BSS  (1 << 4)
 
 // Symbol structure
 struct symbol

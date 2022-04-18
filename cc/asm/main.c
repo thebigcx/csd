@@ -5,14 +5,15 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-char *g_infile = NULL;
-FILE *g_in  = NULL;
-FILE *g_out = NULL;
-struct tok g_tok = { 0 };
-int g_mode = 8;
+char           *g_infile = NULL;
+FILE           *g_in  = NULL;
+FILE           *g_out = NULL;
+struct tok      g_tok = { 0 };
+int             g_mode = 8;
 struct forward *g_forwards = NULL;
-unsigned int g_forwardcnt = 0;
-unsigned int g_line = 1;
+unsigned int    g_forwardcnt = 0;
+unsigned int    g_line = 1;
+uint32_t        g_bss = 0;
 
 // Prints the current source line
 static char *srcline()

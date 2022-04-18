@@ -12,9 +12,13 @@ struct modrm
     int used;
 };
 
+// Emit a byte (or extend BSS section)
 void emitb(uint8_t b)
 {
-    fwrite(&b, 1, 1, g_out);
+    if (getsect()->type == SE_BSS)
+        g_bss++;
+    else
+        fwrite(&b, 1, 1, g_out);
 }
 
 void emitw(uint16_t w)
@@ -56,7 +60,7 @@ void emit(uint64_t v)
 
 unsigned int getpc()
 {
-    return ftell(g_out) - getsect();
+    return ftell(g_out) - getsect()->offset;
 }
 
 static struct label *s_lbls = NULL;
@@ -101,7 +105,7 @@ void forwardref(char *name, int size)
     g_forwards[g_forwardcnt++] = (struct forward) {
         .lbl  = name,
         .pc   = getpc(),
-        .sect = getsectname(),
+        .sect = getsect(),
         .size = size,
         .line = g_line
     };
@@ -140,8 +144,8 @@ void resolve_forwardrefs()
         if (!lbl)
             error("Undefined label '%s'\n", g_forwards[i].lbl);
 
-        setsect(g_forwards[i].sect);
-        fseek(g_out, getsect() + g_forwards[i].pc, SEEK_SET);
+        setsect(g_forwards[i].sect->type);
+        fseek(g_out, getsect()->offset + g_forwards[i].pc, SEEK_SET);
         emitv(lbl->val, g_forwards[i].size);
     }
 }

@@ -75,15 +75,29 @@ struct label
     unsigned int idx; // For the binary output
 };
 
-// Forward reference to resolve later (or add as relocation)
+// Forward reference to resolve later, add as relocation
 struct forward
 {
-    char *lbl, *sect;
+    char    *lbl;
     uint64_t pc;
-    int size;
-    uint8_t flags;
+    int      size;
+    uint8_t  flags;
+
+    struct sect *sect; // Section
 
     int line; // Line number (for debugging)
+};
+
+#define SE_TEXT 0
+#define SE_DATA 1
+#define SE_BSS  2
+
+// Section
+struct sect
+{
+    int      type;
+    uint64_t offset;
+    size_t   size;
 };
 
 // Low 4 bits of register, high bits are size
@@ -156,6 +170,7 @@ extern int g_mode; // Real mode (2), Protected Mode (4), Long Mode (8)
 extern struct forward *g_forwards;
 extern unsigned int g_forwardcnt;
 extern unsigned int g_line;
+extern uint32_t g_bss; // BSS size
 
 void error(const char *msg, ...);
 void general_error(const char *msg, ...); // No specific line number or file
@@ -196,6 +211,6 @@ void expect(int tok);
 // bin.c
 void binheader(); // Write binary file header
 void binfini();   // Finalize
-void setsect(char *name); // Start new section
-uint64_t getsect();
-char *getsectname();
+void startsect(char *name); // Start new section
+void setsect(int type);     // Switch to section
+struct sect *getsect();

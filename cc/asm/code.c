@@ -212,7 +212,7 @@ int directive()
     {
         // Set the current section
         scan();
-        setsect(g_tok.sv);
+        startsect(g_tok.sv);    
         expect(T_IDENT);
     }
     /*else if (!strcmp(g_tok.sv, "times"))
