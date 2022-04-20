@@ -16,6 +16,7 @@ enum TOKEN
     T_RPAREN,
     T_STAR,
     T_PLUS,
+    T_MINUS,
     T_COLON,
     TOKCNT
 };

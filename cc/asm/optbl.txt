@@ -14,11 +14,32 @@ mnem add
 0x01 /r RM32 R32
 0x01 +R /r RM64 R64
 
+mnem sub
+0x2c ib %al imm8
+0x2d iw %ax imm16
+0x2d id %eax imm32
+0x2d +R id %rax imm32
+
+0x80 /5 ib RM8 imm8
+0x81 /5 iw RM16 imm16
+0x81 /5 id RM32 imm32
+0x81 +R /5 id RM64 imm32
+
+0x28 /r RM8 R8
+0x29 /r RM16 R16
+0x29 /r RM32 R32
+0x29 +R /r RM64 R64
+
 mnem mov
 0x88 /r RM8 R8
 0x89 /r RM16 R16
 0x89 /r RM32 R32
 0x89 +R /r RM64 R64
+
+0x8a /r R8 RM8
+0x8b /r R16 RM16
+0x8b /r R32 RM32
+0x8b +R /r R64 RM64
 
 0xc6 /0 ib RM8 imm8
 0xc7 /0 iw RM16 imm16
@@ -30,3 +51,38 @@ mnem jmp
 
 mnem push
 0x50 +r R64
+
+mnem pop
+0x58 +r R64
+
+mnem leave
+0xc9
+
+mnem ret
+0xc3
+
+mnem lea
+0x8d /r R16 M16
+0x8d /r R32 M32
+0x8d +R /r R64 M64
+
+mnem call
+0xff /2 RM16
+0xff /2 RM32
+0xff /2 RM64
+
+mnem test
+0xa8 ib %al imm8
+0xa9 iw %ax imm16
+0xa9 id %eax imm32
+0xa9 +R id %rax imm32
+
+0xf6 /0 ib RM8 imm8
+0xf7 /0 iw RM16 imm16
+0xf7 /0 id RM32 imm32
+0xf7 +R /0 id RM64 imm32
+
+0x84 /r RM8 R8
+0x85 /r RM16 R16
+0x85 /r RM32 R32
+0x85 +R /r RM64 R64

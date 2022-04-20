@@ -189,15 +189,13 @@ struct code pscode()
     // Parse operands
     
     struct op *op = &code.op[0];
-    while (1)
+    while (g_tok.type != T_NL)
     {
         *op++ = psop();
 
         scan();
 
-        if (g_tok.type == T_NL)
-            break;
-        else
+        if (g_tok.type != T_NL)
             expect(T_COMMA);
     }
 

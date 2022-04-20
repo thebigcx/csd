@@ -96,15 +96,19 @@ void parse_opcodes()
                         case 'q': op.imm = 8; break;
                     }
                 }
-                else if (*tok == 'R')
+                else if (*tok == 'R' || *tok == 'M')
                 {
-                    // r/m or reg operand
-                    uint32_t type = OP_TR;
-
-                    if (*(++tok) == 'M')
+                    // r, m, or r/m operand
+                    uint32_t type = 0;
+                    if (*tok == 'R')
                     {
-                        type |= OP_TM;
                         tok++;
+                        type = OP_TR;
+                    }
+                    if (*tok == 'M')
+                    {
+                        tok++;
+                        type |= OP_TM;
                     }
 
                     size_t s = strtol(tok, NULL, 10) / 8; // Size in bytes
