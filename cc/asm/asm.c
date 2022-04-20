@@ -167,18 +167,22 @@ void emitrex(struct opcode *opcode, struct modrm modrm)
 {
     uint8_t rex = opcode->rex;
 
-    rex |= (modrm.reg & 0b1000) << 2;
+    // Instructions with +r use REX.B to encode highest bit
+    if (opcode->r & OR_REGP)
+        modrm.rm = opcode->r & 0b1111;
+
+    rex |= !!(modrm.reg & 0b1000) << 2;
     // SIB: rex |= (modrm.reg & 0b1000) << 2;
-    rex |= (modrm.rm & 0b1000) << 0;
+    rex |= !!(modrm.rm & 0b1000) << 0;
 
     if (rex)
-        emit(rex);
+        emit(REX_BASE | (rex & 0b1111));
 }
 
 // Create ModR/M and SIB bytes
 void modrmsib(struct modrm *modrm, struct code *code, struct opcode *opcode)
 {
-    if (!code->mem && !code->rm && opcode->r == OR_UNUSED)
+    if (!code->mem && !code->rm && (opcode->r == OR_UNUSED || opcode->r & OR_REGP))
         return;
 
     modrm->used = 1;

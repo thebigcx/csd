@@ -62,6 +62,11 @@ void parse_opcodes()
                     op.r = *(++tok) == 'r'
                          ? OR_REGR : *tok - '0';
                 }
+                else if (!strcmp(tok, "+r"))
+                {
+                    // Add reg to primary opcode
+                    op.r = OR_REGP;
+                }
                 else if (!strcmp(tok, "+R"))
                 {
                     // REX.W prefix
@@ -179,6 +184,13 @@ struct opcode matchop(struct code *code)
             // ModR/M.reg field
             if (opc.r == OR_REGR && OP_TYPE(*op) == OP_TR)
                 opc.r = cop->reg;
+
+            // +r : add reg to primary opcode
+            if (opc.r == OR_REGP && OP_TYPE(*op) == OP_TR)
+            {
+                opc.po += cop->reg & 0b111;
+                opc.r |= cop->reg;
+            }
 
             // Immediate
             if (OP_TYPE(*op) == OP_TI)

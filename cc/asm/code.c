@@ -44,14 +44,23 @@ static struct regstr s_regstrs[] = {
     R_ENT("esi", R_SI, 4),
     R_ENT("edi", R_DI, 4),
     
-    R_ENT("rax", R_AX, 8),
-    R_ENT("rcx", R_CX, 8),
-    R_ENT("rdx", R_DX, 8),
-    R_ENT("rbx", R_BX, 8),
-    R_ENT("rsp", R_SP, 8),
-    R_ENT("rbp", R_BP, 8),
-    R_ENT("rsi", R_SI, 8),
-    R_ENT("rdi", R_DI, 8),
+    R_ENT("rax", R_AX,  8),
+    R_ENT("rcx", R_CX,  8),
+    R_ENT("rdx", R_DX,  8),
+    R_ENT("rbx", R_BX,  8),
+    R_ENT("rsp", R_SP,  8),
+    R_ENT("rbp", R_BP,  8),
+    R_ENT("rsi", R_SI,  8),
+    R_ENT("rdi", R_DI,  8),
+    R_ENT("r8",  R_R8,  8),
+    R_ENT("r9",  R_R9,  8),
+    R_ENT("r10", R_R10, 8),
+    R_ENT("r11", R_R11, 8),
+    R_ENT("r12", R_R12, 8),
+    R_ENT("r13", R_R13, 8),
+    R_ENT("r14", R_R14, 8),
+    R_ENT("r15", R_R15, 8),
+
 };
 
 #define REGCNT (sizeof(s_regstrs) / sizeof(s_regstrs[0]))

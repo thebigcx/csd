@@ -27,3 +27,6 @@ mnem mov
 
 mnem jmp
 0xe9 id rel32
+
+mnem push
+0x50 +r R64

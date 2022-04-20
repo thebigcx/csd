@@ -121,7 +121,8 @@ struct sect
 #define R_NUL (-1)
 
 #define OR_REGR (1 << 3) // /r
-#define OR_UNUSED (255)  // ModR/M.reg field unused
+#define OR_REGP (1 << 4) // +r
+#define OR_UNUSED (1 << 5)  // ModR/M.reg field unused
 
 // Types
 #define OP_TR (1 << 0) // Reg
