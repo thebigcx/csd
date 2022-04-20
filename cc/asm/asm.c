@@ -84,9 +84,15 @@ void addlabel(char *name, uint64_t pc)
         }
     }
 
+    int sect = getsect()->type;
+    uint32_t flags = sect == SE_TEXT ? S_TEXT
+                   : sect == SE_DATA ? S_DATA
+                   : sect == SE_BSS  ? S_BSS : 0;
+
     addlabel_impl((struct label) {
-        .name = name,
-        .val  = pc
+        .name  = name,
+        .val   = pc,
+        .flags = flags
     });
 }
 

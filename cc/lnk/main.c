@@ -1,36 +1,16 @@
+#include "lnk.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include <lnk/bin.h>
 
 FILE *g_in[16] = { NULL };
 unsigned int g_incnt = 0;
 FILE *g_out = NULL;
-
-static uint64_t s_base = 0; // Base address of file
-static int s_bin = 0; // Flat binary output
-
-struct sym
-{
-    char *name;
-    uint64_t val;
-    uint8_t flags;
-
-    int index;   // Index in object file
-    int fileidx; // File index (for offset stuff when combining objects)
-};
-
-#define SE_TEXT 1
-#define SE_DATA 2
-
-struct sect
-{
-    int type;
-    int fileidx;
-    uint64_t base;
-};
 
 // Symbol table
 struct sym *g_symtab = NULL;
@@ -40,9 +20,28 @@ unsigned int g_symcnt = 0;
 struct sect *g_sects = NULL;
 unsigned int g_sectcnt = 0;
 
+uint64_t g_base = 0; // Base address of file
+
+static int s_bin = 0; // Flat binary output
+
+// TODO: current file
+void error(const char *msg, ...)
+{
+    printf("\x1b[1;31mError:\x1b[0m ");
+
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+
+    printf("Exiting due to linker errors\n");
+    exit(-1);
+}
+
 // Read the contents of a file: returns malloc'd buffer
 void *readfile(FILE *f)
 {
+    // Get size of file
     fseek(f, 0, SEEK_END);
     size_t s = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -57,123 +56,58 @@ void do_normal()
 
 }
 
-// TODO: do data/bss sections as well
-void do_binary()
+// Match an S_UNDF symbol with an S_GLOB one
+struct sym resolve(struct sym *undf)
 {
-    // 1st pass: Extract symbols from each input file and link external definitions together
-    for (unsigned int i = 0; i < g_incnt; i++)
+    for (unsigned int i = 0; i < g_symcnt; i++)
     {
-        size_t len;
-
-        fseek(g_in[i], 0, SEEK_END);
-        len = ftell(g_in[i]);
-        fseek(g_in[i], 0, SEEK_SET);
-
-        struct bin_main main;
-        fread(&main, sizeof(struct bin_main), 1, g_in[i]);
-
-        char *strs = malloc(len - main.strtab);
-        fseek(g_in[i], main.strtab, SEEK_SET);
-        fread(strs, len - main.strtab, 1, g_in[i]);
-
-        fseek(g_in[i], main.symtab, SEEK_SET);
-
-        for (unsigned int j = 0; j < main.strtab - main.symtab; j += sizeof(struct symbol))
-        {
-            struct symbol sym;
-            fread(&sym, sizeof(struct symbol), 1, g_in[i]);
-
-            g_symtab = realloc(g_symtab, (g_symcnt + 1) * sizeof(struct sym));
-            g_symtab[g_symcnt++] = (struct sym) {
-                .name    = strdup(strs + sym.name),
-                .flags   = sym.flags,
-                .val     = sym.value,
-                .index   = j / sizeof(struct symbol),
-                .fileidx = i
-            };
-        }
-
-        free(strs);
+        if (!strcmp(undf->name, g_symtab[i].name) && g_symtab[i].flags & S_GLOB)
+            return g_symtab[i];
     }
 
-    // 2nd pass: Write text sections
-    for (unsigned int i = 0; i < g_incnt; i++)
+    error("Undefined symbol '%s'\n", undf->name); // TODO: error
+    __builtin_unreachable();
+}
+
+// Copy a section to the output file
+void write_section(int f, int type)
+{
+    fseek(g_in[f], 0, SEEK_SET);
+
+    struct bin_main main;
+    fread(&main, sizeof(struct bin_main), 1, g_in[f]);
+
+    // If BSS, fill with zeroes
+    if (type == SE_BSS)
     {
-        fseek(g_in[i], 0, SEEK_SET);
-
-        struct bin_main main;
-        fread(&main, sizeof(struct bin_main), 1, g_in[i]);
-
-        char *text = malloc(main.txtsz);
-        fread(text, main.txtsz, 1, g_in[i]);
-
-        uint64_t base = ftell(g_out);
-        fwrite(text, main.txtsz, 1, g_out);
-
-        g_sects = realloc(g_sects, (g_sectcnt + 1) * sizeof(struct sect));
-        g_sects[g_sectcnt++] = (struct sect) {
-            .type    = SE_TEXT,
-            .fileidx = i,
-            .base    = base
-        };
-
-        free(text);
+        while (main.bss--) fputc(0, g_out);
+        return;
     }
 
-    // 3rd pass: Do text relocations
-    for (unsigned int i = 0; i < g_incnt; i++)
-    {
-        fseek(g_in[i], 0, SEEK_SET);
+    // Offset and size of input
+    uint64_t offset = sizeof(struct bin_main);
+    if (type == SE_DATA) offset += main.txtsz;
 
-        struct bin_main main;
-        fread(&main, sizeof(struct bin_main), 1, g_in[i]);
+    size_t size = type == SE_TEXT ? main.txtsz : main.datsz;
 
-        fseek(g_in[i], main.txtrel, SEEK_SET);
+    // Read the input, write it to output
+    fseek(g_in[f], offset, SEEK_SET);
 
-        for (unsigned int j = 0; j < main.datrel - main.txtrel; j += sizeof(struct rel))
-        {
-            struct rel rel;
-            fread(&rel, sizeof(struct rel), 1, g_in[i]);
+    char *data = malloc(size);
+    fread(data, size, 1, g_in[f]);
 
-            // Find symbol (will not fail)
-            struct sym sym;
-            for (unsigned int k = 0; k < g_symcnt; k++)
-            {
-                if (g_symtab[k].fileidx == i && g_symtab[k].index == rel.sym) // TODO: text section check
-                {
-                    sym = g_symtab[k];
-                    break;
-                }
-            }
+    uint64_t base = ftell(g_out);
+    fwrite(data, size, 1, g_out);
 
-            // Undefined symbol (resolve)
-            if (sym.flags & S_UNDF)
-            {
-                int found = 0;
-                for (unsigned int k = 0; k < g_symcnt; k++)
-                {
-                    if (!strcmp(sym.name, g_symtab[k].name) && !(g_symtab[k].flags & S_UNDF))
-                    {
-                        found = 1;
-                        sym = g_symtab[k];
-                        break;
-                    }
-                }
+    // Add a section to the list
+    g_sects = realloc(g_sects, (g_sectcnt + 1) * sizeof(struct sect));
+    g_sects[g_sectcnt++] = (struct sect) {
+        .type    = type,
+        .fileidx = f,
+        .base    = base
+    };
 
-                if (!found)
-                    printf("Undefined symbol '%s'\n", sym.name); // TODO: error
-            }
-
-            struct sect sectsrc = g_sects[sym.fileidx]; //TODO: section index instead
-            struct sect sectdst = g_sects[i];
-
-            // Write the relocation: add file base, section base, and addend
-            uint64_t val = s_base + sectsrc.base + sym.val + rel.addend;
-            
-            fseek(g_out, sectdst.base + rel.addr, SEEK_SET);
-            fwrite(&val, rel.size, 1, g_out);
-        }
-    }
+    free(data);
 }
 
 int main(int argc, char **argv)
@@ -192,7 +126,7 @@ int main(int argc, char **argv)
                 case 'b': s_bin = 1; break;
                 case 'a':
                     arg = argv[++i];
-                    s_base = strtoull(arg, NULL, 16);
+                    g_base = strtoull(arg, NULL, 16);
                     break;
             }
         }
@@ -220,10 +154,8 @@ int main(int argc, char **argv)
 
     g_out = fopen("a.out", "w+");
 
-    if (s_bin)
-        do_binary();
-    else
-        do_normal();
+    if (s_bin) do_binary();
+    else do_normal();
 
     for (unsigned int i = 0; i < g_incnt; i++)
         fclose(g_in[i]);

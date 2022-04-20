@@ -114,7 +114,7 @@ void binfini()
         struct label *l = &getlbls()[i];
 
         struct symbol s = {
-            .name = l->idx,
+            .name  = l->idx,
             .value = l->val,
             .flags = l->flags
         };

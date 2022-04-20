@@ -48,7 +48,11 @@ int main(int argc, char **argv)
 
     for (unsigned int i = 0; i < symtabsz / sizeof(struct symbol); i++)
     {
-        printf("\t%s = 0x%lx", strtab + syms[i].name, syms[i].value);
+        const char *sect = syms[i].flags & S_TEXT ? "text"
+                         : syms[i].flags & S_DATA ? "data"
+                         : syms[i].flags & S_BSS  ? "bss" : "<unknown section>";
+
+        printf("\t%s: %s = 0x%lx", sect, strtab + syms[i].name, syms[i].value);
 
         if (syms[i].flags & S_UNDF) printf(" UNDF");
         if (syms[i].flags & S_GLOB) printf(" GLOB");
