@@ -4,9 +4,6 @@
 #include <string.h>
 
 static struct bin_main s_main = { 0 };
-/*static uint64_t s_sectoff = 0;
-static uint64_t s_datoff = 0;*/
-
 static struct sect s_sects[3] = { 0 };
 static int s_sectidx = -1; // Current section index
 
@@ -17,8 +14,8 @@ void binheader()
 
 void endsect()
 {
-    // Set size of current section
-    if (s_sectidx != -1)
+    // Set size of current section (BSS will already have size)
+    if (s_sectidx != -1 && s_sectidx != S_BSS)
     {
         struct sect *pre = &s_sects[s_sectidx];
         pre->size = ftell(g_out) - pre->offset;

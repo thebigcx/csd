@@ -139,6 +139,7 @@ unsigned int labelcnt()
     return s_lblcnt;
 }
 
+// TODO: is this necessary?
 // Resolve all forward references
 void resolve_forwardrefs()
 {
@@ -151,13 +152,12 @@ void resolve_forwardrefs()
         if (!lbl)
             error("Undefined label '%s'\n", g_forwards[i].lbl);
 
-        setsect(g_forwards[i].sect->type);
-        fseek(g_out, getsect()->offset + g_forwards[i].pc, SEEK_SET);
+        /*fseek(g_out, g_forwards[i].sect->offset + g_forwards[i].pc, SEEK_SET);
         
         if (g_forwards[i].flags & R_PCREL)
             emitv(lbl->val - (g_forwards[i].pc + g_forwards[i].size), g_forwards[i].size);
         else
-            emitv(lbl->val, g_forwards[i].size);
+            emitv(lbl->val, g_forwards[i].size);*/
     }
 }
 
