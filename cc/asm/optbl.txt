@@ -24,3 +24,6 @@ mnem mov
 0xc7 /0 iw RM16 imm16
 0xc7 /0 id RM32 imm32
 0xc7 +R /0 id RM64 imm32
+
+mnem jmp
+0xe9 id rel32

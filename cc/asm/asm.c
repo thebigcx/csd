@@ -105,15 +105,16 @@ void addextern(char *name)
 }
 
 // Forward reference a label (add it as undefined, define it later)
-void forwardref(char *name, int size)
+void forwardref(char *name, int size, int pcrel)
 {
     g_forwards = realloc(g_forwards, sizeof(struct forward) * (g_forwardcnt + 1));
     g_forwards[g_forwardcnt++] = (struct forward) {
-        .lbl  = name,
-        .pc   = getpc(),
-        .sect = getsect(),
-        .size = size,
-        .line = g_line
+        .lbl   = name,
+        .pc    = getpc(),
+        .sect  = getsect(),
+        .size  = size,
+        .line  = g_line,
+        .flags = pcrel ? R_PCREL : 0
     };
 }
 
@@ -152,7 +153,11 @@ void resolve_forwardrefs()
 
         setsect(g_forwards[i].sect->type);
         fseek(g_out, getsect()->offset + g_forwards[i].pc, SEEK_SET);
-        emitv(lbl->val, g_forwards[i].size);
+        
+        if (g_forwards[i].flags & R_PCREL)
+            emitv(lbl->val - (g_forwards[i].pc + g_forwards[i].size), g_forwards[i].size);
+        else
+            emitv(lbl->val, g_forwards[i].size);
     }
 }
 
@@ -251,11 +256,15 @@ void assem(struct code *code, struct opcode *opcode)
             if (!strcmp(code->mem->lbl, "."))
                 code->mem->mem.disp = pc;
             else
-                forwardref(strdup(code->mem->lbl), code->mem->mem.dispsz);
+                forwardref(strdup(code->mem->lbl), code->mem->mem.dispsz, 0);
         }
 
         emitv(code->mem->mem.disp, code->mem->mem.dispsz);
     }
+
+    // RIP-relative: subtract address of following instruction
+    if (opcode->rel)
+        code->imm->imm -= getpc() + opcode->imm;
 
     // Immediate
     if (code->imm)
@@ -264,9 +273,9 @@ void assem(struct code *code, struct opcode *opcode)
         if (code->imm->lbl)
         {
             if (!strcmp(code->imm->lbl, "."))
-                code->imm->imm = pc;
+                code->imm->imm += pc; // In case of RIP-rel
             else
-                forwardref(strdup(code->imm->lbl), opcode->imm);
+                forwardref(strdup(code->imm->lbl), opcode->imm, opcode->rel);
         }
         
         emitv(code->imm->imm, opcode->imm);

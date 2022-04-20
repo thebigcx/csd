@@ -73,6 +73,13 @@ void parse_opcodes()
                     size_t s = strtol(tok += 3, NULL, 10) / 8;
                     *oper++ = OP_TI | (s << 3);
                 }
+                else if (!strncmp(tok, "rel", 3))
+                {
+                    // Relative address operand
+                    size_t s = strtol(tok += 3, NULL, 10) / 8;
+                    *oper++ = OP_TI | (s << 3);
+                    op.rel  = s;
+                }
                 else if (*tok == 'i')
                 {
                     // Immediate size

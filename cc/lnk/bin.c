@@ -80,12 +80,16 @@ void do_binary()
             if (sym.flags & S_UNDF)
                 sym = resolve(&sym);
 
+            // TODO: do this
+            if (rel.flags & R_PCREL)
+                continue;
+
             struct sect sectsrc = g_sects[sym.fileidx]; //TODO: section index instead
             struct sect sectdst = g_sects[i];
 
             // Write the relocation: add file base, section base, and addend
             uint64_t val = g_base + sectsrc.base + sym.val + rel.addend;
-            
+
             fseek(g_out, sectdst.base + rel.addr, SEEK_SET);
             fwrite(&val, rel.size, 1, g_out);
         }

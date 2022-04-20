@@ -160,6 +160,7 @@ struct opcode
     uint32_t op[3]; // Operands
 
     uint8_t imm; // Immediate size in bytes (0 if unused)
+    uint8_t rel; // Relative size in bytes (0 if unused)
 };
 
 extern char *g_infile; // Input file name
@@ -184,7 +185,7 @@ void dofile(); // Assemble file
 void assem(struct code *code, struct opcode *opcode); // Assemble code
 void addlabel(char *name, uint64_t pc);
 void addextern(char *name); // Add an external symbol
-void forwardref(char *name, int size);
+void forwardref(char *name, int size, int pcrel);
 struct label *resolvelbl(char *name);
 
 struct label *getlbls();
