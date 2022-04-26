@@ -1,17 +1,18 @@
-SRC=readbin.c
-TARG=$(patsubst %.c, %, $(SRC))
-
+TARGETS=disas readbin
 CFLAGS=-g -I..
 
-all: $(TARG)
+all: $(TARGETS)
 
-$(TARG): $(SRC)
+disas: disas.c
+	gcc -o $@ $< $(CFLAGS) -L../lib -l:liboptbl.a
+
+readbin: readbin.c
 	gcc -o $@ $< $(CFLAGS)
 
 install:
-	@for bin in $(TARG) ; do \
+	@for bin in $(TARGETS) ; do \
 		cp $$bin ~/opt/bin/ ; \
 	done
 
 clean:
-	rm $(TARG)
+	rm $(TARGETS)
