@@ -113,6 +113,7 @@ void write_section(int f, int type)
 int main(int argc, char **argv)
 {
     char *input[16] = { NULL };
+    char *output = NULL;
     unsigned int cnt = 0;
 
     // Parse command line arguments
@@ -128,6 +129,10 @@ int main(int argc, char **argv)
                     arg = argv[++i];
                     g_base = strtoull(arg, NULL, 16);
                     break;
+                case 'o':
+                    output = strdup(argv[++i]);
+                    break;
+
             }
         }
         else
@@ -139,6 +144,9 @@ int main(int argc, char **argv)
         printf("usage: lnk <input> -b -a <base>\n");
         return -1;
     }
+
+    if (!output)
+        strcpy(output, "a.out");
 
     // Open input files
     g_incnt = cnt;
@@ -152,7 +160,7 @@ int main(int argc, char **argv)
         }
     }
 
-    g_out = fopen("a.out", "w+");
+    g_out = fopen(output, "w+");
 
     if (s_bin) do_binary();
     else do_normal();
@@ -160,6 +168,7 @@ int main(int argc, char **argv)
     for (unsigned int i = 0; i < g_incnt; i++)
         fclose(g_in[i]);
 
+    free(output);
     fclose(g_out);
     return 0;
 }
