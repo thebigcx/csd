@@ -3,11 +3,49 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
-// TODO: TEMPORARY!! Need to actually parse the register
+// TODO: expose to library?
 static op_t parse_reg(const char *str)
 {
-    return (op_t) { .type = OTT_REG, .reg = 0, .size = 2 };
+    op_t op = { .type = OTT_REG, .size = 2 };
+
+    // 'r' prefix, either extended register or 64-bit
+    if (*str == 'r') {
+        if (isdigit(*(++str))) { // r8-r15
+            op.reg = strtol(str, NULL, 10);
+
+            switch (str[strlen(str) - 1]) {
+                case 'l': op.size = 1; return op;
+                case 'w': op.size = 2; return op;
+                case 'd': op.size = 4; return op;
+                default:  op.size = 8; return op;
+            }
+        }
+
+        op.size = 8;
+    }
+    else if (*str == 'e') { // 'e' prefix - 32-bit
+        op.size = 4;
+        str++;
+    }
+
+    // Get actual register
+         if (!strncmp(str, "sp", 2)) op.reg = 0b0100;
+    else if (!strncmp(str, "bp", 2)) op.reg = 0b0101;
+    else if (!strncmp(str, "si", 2)) op.reg = 0b0110;
+    else if (!strncmp(str, "di", 2)) op.reg = 0b0111;
+    else
+        op.reg = *str == 'a' ? 0
+               : *str == 'c' ? 1
+               : *str == 'd' ? 2
+               : *str == 'b' ? 3 : 0;
+
+    // 'l' suffix - 8-bit (low)
+    if (str[strlen(str) - 1] == 'l')
+        op.size = 1;
+
+    return op;
 }
 
 static struct optbl parse_line(char *str, const char *mnem)

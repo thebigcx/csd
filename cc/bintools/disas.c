@@ -145,7 +145,7 @@ int main(int argc, char **argv)
                     imm |= NXT(byte) << (j * 8);
                 }
                 
-                printf(" 0x%x", imm);
+                printf(" 0x%lx", imm);
             }
 
             if (op.ops[i].type == OTT_REG) {
