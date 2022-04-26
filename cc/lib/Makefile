@@ -15,7 +15,7 @@ $(OBJ): $(SRC)
 	gcc -o $@ -c $< $(CFLAGS)
 
 clean:
-	rm $(TARG)
+	rm $(TARG) $(OBJ)
 
 install:
 	@for lib in $(TARG) ; do \

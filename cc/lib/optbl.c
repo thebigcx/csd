@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
+// TODO: TEMPORARY!! Need to actually parse the register
 static op_t parse_reg(const char *str)
 {
-    return (op_t) { .type = OTT_REG };
+    return (op_t) { .type = OTT_REG, .reg = 0, .size = 2 };
 }
 
 static struct optbl parse_line(char *str, const char *mnem)
@@ -106,9 +107,11 @@ int optbl_foreach(const char *file, void (*fn)(struct optbl*))
     return 0;
 }
 
+// TODO: this is so stupid
 static struct optbl *s_curr_op = NULL; /* Current optbl pointer */
 static uint8_t s_opcode = 0;
 static uint8_t s_pre = 0;
+static uint8_t s_size = 0;
 static int s_done = 0;
 
 static void search_callback(struct optbl *op)
@@ -116,17 +119,26 @@ static void search_callback(struct optbl *op)
     if (s_done) return;
 
     if (op->po == s_opcode && (!!(op->flag & OT_INPRE) == (s_pre == 0x0f))) {
+        
+        // TODO: this is kinda bad
+        // 8-bit instructions have designated opcodes
+        if (op->ops[0].size != 1) {
+            if (op->ops[0].type & (OTT_REG | OTT_MEM) && op->ops[0].size != s_size) return;
+            if (op->ops[1].type & (OTT_REG | OTT_MEM) && op->ops[1].size != s_size) return;
+        }
+
         *s_curr_op = *op;
         s_done = 1;
     }
 }
 
-int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode,
+int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, uint8_t size,
                       struct optbl *op)
 {
     s_opcode  = opcode;
     s_pre     = pre;
     s_curr_op = op;
+    s_size    = size;
     s_done    = 0;
 
     return optbl_foreach(file, search_callback);

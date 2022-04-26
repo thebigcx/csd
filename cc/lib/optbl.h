@@ -13,13 +13,13 @@
 #define OT_NOMODRM (1 << 6) // ModR/M unused
 #define OT_REGR    (1 << 7) // /r ModR/M
 
-#define OTT_REG 1 // Register
-#define OTT_MEM 2 // Memory
-#define OTT_IMM 3 // Immediate
+#define OTT_REG (1 << 0) // Register
+#define OTT_MEM (1 << 1) // Memory
+#define OTT_IMM (1 << 2) // Immediate
 
 typedef struct
 {
-    uint32_t type : 2; // OTT_
+    uint32_t type : 3; // OTT_
     uint32_t size : 4;
     uint32_t reg  : 4;
 } op_t;
@@ -36,5 +36,5 @@ struct optbl
 };
 
 int optbl_foreach(const char *file, void (*fn)(struct optbl*)); /* Loop over each line of optbl */
-int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode,
+int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, uint8_t size,
                       struct optbl *op); /* Find optbl from opcode */

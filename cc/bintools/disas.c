@@ -34,6 +34,21 @@ struct regstr
 #define REGSTR(s, sz, v) { .str = s, .size = sz, .val = v }
 
 static struct regstr regstrs[] = {
+    REGSTR("al", 1, 0),
+    REGSTR("cl", 1, 1),
+    REGSTR("dl", 1, 2),
+    REGSTR("bl", 1, 3),
+    
+    REGSTR("ax", 2, 0),
+    REGSTR("cx", 2, 1),
+    REGSTR("dx", 2, 2),
+    REGSTR("bx", 2, 3),
+
+    REGSTR("eax", 4, 0),
+    REGSTR("ecx", 4, 1),
+    REGSTR("edx", 4, 2),
+    REGSTR("ebx", 4, 3),
+
     REGSTR("rax", 8, 0),
     REGSTR("rcx", 8, 1),
     REGSTR("rdx", 8, 2),
@@ -75,12 +90,14 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
 
-    uint8_t byte = 0;
-    int opsz = 0, adrsz = 0, inst_set = 0;
-
-    union modrm modrm = { 0 };
-
     while (!feof(g_in)) {
+        union modrm modrm = { 0 };
+        uint8_t byte = 0;
+        uint8_t rex = 0;
+        int opsz = 0, adrsz = 0, inst_set = 0;
+
+        uint8_t po = 0;
+
         // Read until valid opcode
         while (!valid_opcode(NXT(byte))) {
             switch (byte) {
@@ -88,17 +105,61 @@ int main(int argc, char **argv)
                 case 0x67: adrsz = 1; continue;
                 case 0x0f: inst_set = 1; continue;
             }
+
+            // REX
+            rex = byte;
         }
 
         if (byte == 0xff) break;
-    
+
+        po = byte;
+        
+        size_t size = opsz ? 2
+                    : rex & 0b1000 ? 8
+                    : 4;
+
         struct optbl op = { 0 };
-        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, byte, &op);
+        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, size, &op);
 
         if (!(op.flag & OT_NOMODRM))
-            modrm = (union modrm) { .bits = NXT(byte) };
+            modrm.bits = NXT(byte);
 
-        printf("%s %s, %s\n", op.mnem, reg_to_str(modrm.reg, 8), reg_to_str(modrm.rm, 8));
+        // For a +r opcode, remove 3 bits and set ModR/M.reg
+        if (op.flag & OT_REGPO) {
+            modrm.reg = po & 0b111;
+            po &= ~0b111;
+        }
+
+        //optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, &op);
+
+        printf("\t%s", op.mnem);
+
+        // Foreach operand
+        for (int i = 0; i < 3; i++) {
+
+            if (op.ops[i].type == OTT_IMM) {
+                // Read in immediate
+                uint64_t imm = 0;
+
+                for (uint8_t j = 0; j < op.ops[i].size; j++) {
+                    imm |= NXT(byte) << (j * 8);
+                }
+                
+                printf(" 0x%x", imm);
+            }
+
+            if (op.ops[i].type == OTT_REG) {
+                
+                // If no ModR/M, use the specific register in the optbl
+                uint8_t reg = op.flag & OT_NOMODRM ? op.ops[i].reg : modrm.reg;
+                printf(" %s", reg_to_str(modrm.reg, op.ops[i].size));
+            }
+                
+            if (op.ops[i].type & OTT_MEM)
+                printf(" %s", reg_to_str(modrm.rm, op.ops[i].size));
+        }
+
+        printf("\n");
     }
 
     return 0;
