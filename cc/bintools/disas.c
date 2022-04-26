@@ -7,8 +7,18 @@
 #include <stdint.h>
 
 #include <lib/optbl.h>
+#include <lnk/bin.h>
 
 FILE *g_in = NULL;
+
+// File metadata
+char          *strtab = NULL;
+struct symbol *symtab = NULL;
+unsigned int   symcnt = 0;
+
+int binary_input = 0;
+size_t text_size = 0;
+uint64_t section_offset = 0;
 
 #define NXT(b) (b = fgetc(g_in))
 
@@ -70,29 +80,133 @@ static void cleanup()
     fclose(g_in);
 }
 
+// Read file metadata (if not raw binary)
+static void read_metadata()
+{
+    if (!binary_input) {
+        struct bin_main main;
+        fread(&main, sizeof(struct bin_main), 1, g_in);
+    
+        text_size = main.txtsz;
+
+        // Read string table and symbol table
+        fseek(g_in, 0, SEEK_END);
+        size_t file_size = ftell(g_in);
+
+        symcnt = (main.strtab - main.symtab) / sizeof(struct symbol);
+        symtab = malloc(main.strtab - main.symtab);
+
+        fseek(g_in, main.symtab, SEEK_SET);
+        fread(symtab, sizeof(struct symbol), symcnt, g_in);
+
+        strtab = malloc(file_size - main.strtab);
+        fread(strtab, file_size - main.strtab, 1, g_in);
+
+        fseek(g_in, sizeof(struct bin_main), SEEK_SET);
+
+    } else {
+        fseek(g_in, 0, SEEK_END);
+        text_size = ftell(g_in);
+        fseek(g_in, 0, SEEK_SET);
+    }
+}
+
+// Get a symbol given its value
+static struct symbol *getsymbol(uint64_t val)
+{
+    for (unsigned int i = 0; i < symcnt; i++) {
+        if (symtab[i].value == val)
+            return &symtab[i];
+    }
+
+    return NULL;
+}
+
 int valid_opcode(uint8_t byte)
 {
     return byte != 0x66 && byte != 0x67 && byte != 0x0f
         && (byte < 0x40 || byte > 0x4f);
 }
 
+// Read in an immediate operand and print it
+void do_immediate(struct optbl *optbl, op_t *op)
+{
+    // Read in immediate
+    uint64_t imm = 0;
+    uint8_t byte = 0;
+
+    for (uint8_t j = 0; j < op->size; j++) {
+        imm |= NXT(byte) << (j * 8);
+    }
+
+    if (optbl->flag & OT_REL) {
+        int64_t rel = (int64_t)imm + (ftell(g_in) - section_offset);
+        
+        printf(" 0x%lx", rel);
+
+        // Check if relative to label TODO: closest symbol if none match perfectly
+        struct symbol *sym = getsymbol(rel);
+        if (sym)
+            printf(" <%s>", strtab + sym->name);
+    } else
+        printf(" 0x%lx", imm);
+}
+
+void do_register(union modrm *modrm, struct optbl *optbl, op_t *op)
+{
+    // If no ModR/M, use the specific register in the optbl
+    uint8_t reg = optbl->flag & OT_NOMODRM ? op->reg : modrm->reg;
+    printf(" %s", reg_to_str(modrm->reg, op->size));
+}
+
+void do_memory(union modrm *modrm, struct optbl *optbl, op_t *op)
+{
+    printf(" %s", reg_to_str(modrm->rm, op->size));
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) {
-        printf("usage: disas <inputfile>\n");
+        printf("usage: disas <inputfile> -b\n");
         exit(-1);
     }
 
-    if (!(g_in = fopen(argv[1], "r"))) {
-        printf("disas: %s: %s\n", argv[1], strerror(errno));
+    char *input = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-b"))
+            binary_input = 1;
+        else
+            input = argv[i];
+    }
+
+    if (!input) {
+        printf("usage: disas <inputfile> -b");
+        exit(-1);
+    }
+
+    if (!(g_in = fopen(input, "r"))) {
+        printf("disas: %s: %s\n", input, strerror(errno));
         exit(-1);
     }
 
     atexit(cleanup);
 
-    while (!feof(g_in)) {
-        // Program counter
-        uint64_t pc = ftell(g_in);
+    read_metadata();
+
+    printf("Disassembly of text section:\n");
+
+    uint64_t pc = 0;
+    section_offset = ftell(g_in);
+
+    while (ftell(g_in) - section_offset < text_size) {
+        // Start of instruction
+        uint64_t strt = ftell(g_in);
+
+        // Check if there exists a label at the current RIP
+        struct symbol *sym = getsymbol(pc);
+        if (sym)
+            printf("0x%lx <%s>:\n", pc, strtab + sym->name);
 
         union modrm modrm = { 0 };
         uint8_t byte = 0;
@@ -135,7 +249,7 @@ int main(int argc, char **argv)
 
         //optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, &op);
 
-        printf("%lx: \t%s", pc, op.mnem);
+        printf("  %lx:\t%s", pc, op.mnem);
 
         // Foreach operand
         for (int i = 0; i < 3; i++) {
@@ -145,33 +259,19 @@ int main(int argc, char **argv)
                 if (!i) printf("\t");
                 else    printf(",");
 
-            if (op.ops[i].type == OTT_IMM) {
-                // Read in immediate
-                uint64_t imm = 0;
-
-                for (uint8_t j = 0; j < op.ops[i].size; j++) {
-                    imm |= NXT(byte) << (j * 8);
-                }
-
-                if (op.flag & OT_REL) {
-                    int64_t rel = (int64_t)imm + ftell(g_in); // TODO: only works for flat binaries
-                    printf(" 0x%lx", rel);
-                } else
-                    printf(" 0x%lx", imm);
+            switch (op.ops[i].type) {
+                case OTT_IMM: do_immediate(&op, &op.ops[i]); break;
+                case OTT_REG: do_register(&modrm, &op, &op.ops[i]); break;
+                default:
+                    if (op.ops[i].type & OTT_MEM)
+                        do_memory(&modrm, &op, &op.ops[i]);
+                    break;
             }
-
-            if (op.ops[i].type == OTT_REG) {
-                
-                // If no ModR/M, use the specific register in the optbl
-                uint8_t reg = op.flag & OT_NOMODRM ? op.ops[i].reg : modrm.reg;
-                printf(" %s", reg_to_str(modrm.reg, op.ops[i].size));
-            }
-                
-            if (op.ops[i].type & OTT_MEM)
-                printf(" %s", reg_to_str(modrm.rm, op.ops[i].size));
         }
 
         printf("\n");
+
+        pc += ftell(g_in) - strt;
     }
 
     return 0;
