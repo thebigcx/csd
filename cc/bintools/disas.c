@@ -91,6 +91,9 @@ int main(int argc, char **argv)
     atexit(cleanup);
 
     while (!feof(g_in)) {
+        // Program counter
+        uint64_t pc = ftell(g_in);
+
         union modrm modrm = { 0 };
         uint8_t byte = 0;
         uint8_t rex = 0;
@@ -132,10 +135,15 @@ int main(int argc, char **argv)
 
         //optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, &op);
 
-        printf("\t%s", op.mnem);
+        printf("%lx: \t%s", pc, op.mnem);
 
         // Foreach operand
         for (int i = 0; i < 3; i++) {
+            
+            // Format instruction nicely
+            if (op.ops[i].type)
+                if (!i) printf("\t");
+                else    printf(",");
 
             if (op.ops[i].type == OTT_IMM) {
                 // Read in immediate
@@ -144,8 +152,12 @@ int main(int argc, char **argv)
                 for (uint8_t j = 0; j < op.ops[i].size; j++) {
                     imm |= NXT(byte) << (j * 8);
                 }
-                
-                printf(" 0x%lx", imm);
+
+                if (op.flag & OT_REL) {
+                    int64_t rel = (int64_t)imm + ftell(g_in); // TODO: only works for flat binaries
+                    printf(" 0x%lx", rel);
+                } else
+                    printf(" 0x%lx", imm);
             }
 
             if (op.ops[i].type == OTT_REG) {
