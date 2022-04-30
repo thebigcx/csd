@@ -151,6 +151,7 @@ static uint8_t s_opcode = 0;
 static uint8_t s_pre = 0;
 static int s_opov = 0; // Operand-size override
 static int s_rexw = 0; // REX.W prefix
+static int s_modr = 0; // ModR/M.reg
 static int s_done = 0;
 
 // TODO: default operand size
@@ -175,18 +176,21 @@ static void search_callback(struct optbl *op)
     // Match REX.W prefixes
     if (!!s_rexw != !!(op->flag & OT_REXW)) return;
 
+    if (s_modr != -1 && !(op->flag & (OT_REGR | OT_REGPO)) && s_modr != op->modr) return;
+
     *s_curr_op = *op;
     s_done = 1;
 }
 
 int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, int opov,
-                      int rexw, struct optbl *op)
+                      int rexw, int modr, struct optbl *op)
 {
     s_opcode  = opcode;
     s_pre     = pre;
     s_curr_op = op;
     s_opov    = opov;
     s_rexw    = rexw;
+    s_modr    = modr;
     s_done    = 0;
 
     return optbl_foreach(file, search_callback);

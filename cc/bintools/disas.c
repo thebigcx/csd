@@ -232,7 +232,7 @@ int main(int argc, char **argv)
         po = byte;
         
         struct optbl op = { 0 };
-        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, &op);
+        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, -1, &op);
 
         if (!(op.flag & OT_NOMODRM))
             modrm.bits = NXT(byte);
@@ -243,7 +243,8 @@ int main(int argc, char **argv)
             po &= ~0b111;
         }
 
-        //optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, &op);
+        // Seach again using ModR/M.reg (for instructions with /0, /2, etc.)
+        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, modrm.reg, &op);
 
         printf("  %lx:\t%s", pc, op.mnem);
 

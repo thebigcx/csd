@@ -36,5 +36,5 @@ struct optbl
 };
 
 int optbl_foreach(const char *file, void (*fn)(struct optbl*)); /* Loop over each line of optbl */
-int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, int opov, int rexw,
-                      struct optbl *op); /* Find optbl from opcode */
+int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, int opov,
+                      int rexw, int modr, struct optbl *op); /* Find optbl from opcode */
