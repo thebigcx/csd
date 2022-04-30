@@ -149,34 +149,44 @@ int optbl_foreach(const char *file, void (*fn)(struct optbl*))
 static struct optbl *s_curr_op = NULL; /* Current optbl pointer */
 static uint8_t s_opcode = 0;
 static uint8_t s_pre = 0;
-static uint8_t s_size = 0;
+static int s_opov = 0; // Operand-size override
+static int s_rexw = 0; // REX.W prefix
 static int s_done = 0;
 
+// TODO: default operand size
 static void search_callback(struct optbl *op)
 {
     if (s_done) return;
 
-    if (op->po == s_opcode && (!!(op->flag & OT_INPRE) == (s_pre == 0x0f))) {
-        
-        // TODO: this is kinda bad
-        // 8-bit instructions have designated opcodes
-        if (op->ops[0].size != 1) {
-            if (op->ops[0].type & (OTT_REG | OTT_MEM) && op->ops[0].size != s_size) return;
-            if (op->ops[1].type & (OTT_REG | OTT_MEM) && op->ops[1].size != s_size) return;
-        }
-
-        *s_curr_op = *op;
-        s_done = 1;
+    // For +r opcode, check if in range, otherwise, match opcodes
+    if (op->flag & OT_REGPO) {
+        if (s_opcode < op->po || s_opcode >= op->po + 8) return;
+    } else {
+        if (op->po != s_opcode) return;
     }
+    
+    // Match opcode prefix
+    if (!!(op->flag & OT_INPRE) != (s_pre == 0x0f)) return;
+
+    // Match operand-size override prefixes
+    if (op->ops[0].type & (OTT_REG | OTT_MEM) && (op->ops[0].size == 2) != !!s_opov) return;
+    if (op->ops[1].type & (OTT_REG | OTT_MEM) && (op->ops[1].size == 2) != !!s_opov) return;
+
+    // Match REX.W prefixes
+    if (!!s_rexw != !!(op->flag & OT_REXW)) return;
+
+    *s_curr_op = *op;
+    s_done = 1;
 }
 
-int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, uint8_t size,
-                      struct optbl *op)
+int optbl_from_opcode(const char *file, uint8_t pre, uint8_t opcode, int opov,
+                      int rexw, struct optbl *op)
 {
     s_opcode  = opcode;
     s_pre     = pre;
     s_curr_op = op;
-    s_size    = size;
+    s_opov    = opov;
+    s_rexw    = rexw;
     s_done    = 0;
 
     return optbl_foreach(file, search_callback);

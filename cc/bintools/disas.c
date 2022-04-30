@@ -231,12 +231,8 @@ int main(int argc, char **argv)
 
         po = byte;
         
-        size_t size = opsz ? 2
-                    : rex & 0b1000 ? 8
-                    : 4;
-
         struct optbl op = { 0 };
-        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, size, &op);
+        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, &op);
 
         if (!(op.flag & OT_NOMODRM))
             modrm.bits = NXT(byte);
