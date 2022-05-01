@@ -34,6 +34,18 @@ union modrm
     uint8_t bits;
 };
 
+// SIB byte
+union sib 
+{
+    struct // Little-endian (reverse order)
+    {
+        uint8_t base : 3;
+        uint8_t idx  : 3;
+        uint8_t scl  : 2;
+    };
+    uint8_t bits;
+};
+
 struct regstr
 {
     const char *str;
@@ -128,16 +140,22 @@ int valid_opcode(uint8_t byte)
         && (byte < 0x40 || byte > 0x4f);
 }
 
-// Read in an immediate operand and print it
-void do_immediate(struct optbl *optbl, op_t *op)
+uint64_t read_immediate(size_t size)
 {
     // Read in immediate
     uint64_t imm = 0;
     uint8_t byte = 0;
 
-    for (uint8_t j = 0; j < op->size; j++) {
+    for (uint8_t j = 0; j < size; j++)
         imm |= NXT(byte) << (j * 8);
-    }
+
+    return imm;
+}
+
+// Read in an immediate operand and print it
+void do_immediate(struct optbl *optbl, op_t *op)
+{
+    uint64_t imm = read_immediate(op->size);
 
     if (optbl->flag & OT_REL) {
         int64_t rel = (int64_t)imm + (ftell(g_in) - section_offset);
@@ -155,13 +173,38 @@ void do_immediate(struct optbl *optbl, op_t *op)
 void do_register(union modrm *modrm, struct optbl *optbl, op_t *op)
 {
     // If no ModR/M, use the specific register in the optbl
-    uint8_t reg = optbl->flag & OT_NOMODRM ? op->reg : modrm->reg;
-    printf(" %s", reg_to_str(modrm->reg, op->size));
+    uint8_t reg = optbl->flag & OT_NOMODRM ? op->reg
+                : op->type == (OTT_REG | OTT_MEM) ? modrm->rm : modrm->reg;
+    printf(" %s", reg_to_str(reg, op->size));
 }
 
 void do_memory(union modrm *modrm, struct optbl *optbl, op_t *op)
 {
-    printf(" %s", reg_to_str(modrm->rm, op->size));
+    // Easy case: no SIB byte
+    if ((modrm->rm & 0b111) != 0b100) {
+        printf(" [%s", reg_to_str(modrm->rm, 8)); // TODO: address-size override
+
+        // Displacements
+        if (modrm->mod == 1) printf(" + 0x%lx", read_immediate(1));
+        if (modrm->mod == 2) printf(" + 0x%lx", read_immediate(4));
+
+        printf("]");
+        return;
+    }
+
+    // Hard case: SIB byte
+    // TODO: special cases sp/bp
+
+    uint8_t byte;
+    union sib sib = { .bits = NXT(byte) };
+
+    printf(" [%s + (%s * %d)", reg_to_str(sib.base, 8), reg_to_str(sib.idx, 8), 1 << sib.scl);
+
+    // Displacements
+    if (modrm->mod == 1) printf(" + 0x%lx", read_immediate(1));
+    if (modrm->mod == 2) printf(" + 0x%lx", read_immediate(4));
+
+    printf("]");
 }
 
 int main(int argc, char **argv)
@@ -256,13 +299,12 @@ int main(int argc, char **argv)
                 if (!i) printf("\t");
                 else    printf(",");
 
-            switch (op.ops[i].type) {
-                case OTT_IMM: do_immediate(&op, &op.ops[i]); break;
-                case OTT_REG: do_register(&modrm, &op, &op.ops[i]); break;
-                default:
-                    if (op.ops[i].type & OTT_MEM)
-                        do_memory(&modrm, &op, &op.ops[i]);
-                    break;
+            if (op.ops[i].type == OTT_IMM) do_immediate(&op, &op.ops[i]);
+            else {
+                if (modrm.mod != 3 && op.ops[i].type & OTT_MEM)
+                    do_memory(&modrm, &op, &op.ops[i]);
+                else if (op.ops[i].type & OTT_REG)
+                    do_register(&modrm, &op, &op.ops[i]);
             }
         }
 
