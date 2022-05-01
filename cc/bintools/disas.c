@@ -16,9 +16,11 @@ char          *strtab = NULL;
 struct symbol *symtab = NULL;
 unsigned int   symcnt = 0;
 
-int binary_input = 0;
-size_t text_size = 0;
-uint64_t section_offset = 0;
+int      binary_input    = 0;
+size_t   text_size       = 0;
+size_t   base_address    = 0;
+uint64_t section_offset  = 0;
+uint64_t program_counter = 0;
 
 #define NXT(b) (b = fgetc(g_in))
 
@@ -158,7 +160,7 @@ void do_immediate(struct optbl *optbl, op_t *op)
     uint64_t imm = read_immediate(op->size);
 
     if (optbl->flag & OT_REL) {
-        int64_t rel = (int64_t)imm + (ftell(g_in) - section_offset);
+        int64_t rel = (int64_t)imm + (ftell(g_in) - section_offset) + base_address;
         
         printf(" 0x%lx", rel);
 
@@ -180,6 +182,8 @@ void do_register(union modrm *modrm, struct optbl *optbl, op_t *op)
 
 void do_memory(union modrm *modrm, struct optbl *optbl, op_t *op)
 {
+    printf(" u%d", op->size * 8);
+
     // Easy case: no SIB byte
     if ((modrm->rm & 0b111) != 0b100) {
         printf(" [%s", reg_to_str(modrm->rm, 8)); // TODO: address-size override
@@ -219,6 +223,8 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-b"))
             binary_input = 1;
+        else if (!strcmp(argv[i], "-a"))
+            base_address = strtol(argv[++i], NULL, 16);
         else
             input = argv[i];
     }
@@ -239,17 +245,17 @@ int main(int argc, char **argv)
 
     printf("Disassembly of text section:\n");
 
-    uint64_t pc = 0;
-    section_offset = ftell(g_in);
+    program_counter = base_address;
+    section_offset  = ftell(g_in);
 
     while (ftell(g_in) - section_offset < text_size) {
         // Start of instruction
         uint64_t strt = ftell(g_in);
 
         // Check if there exists a label at the current RIP
-        struct symbol *sym = getsymbol(pc);
+        struct symbol *sym = getsymbol(program_counter);
         if (sym)
-            printf("0x%lx <%s>:\n", pc, strtab + sym->name);
+            printf("0x%lx <%s>:\n", program_counter, strtab + sym->name);
 
         union modrm modrm = { 0 };
         uint8_t byte = 0;
@@ -289,7 +295,7 @@ int main(int argc, char **argv)
         // Seach again using ModR/M.reg (for instructions with /0, /2, etc.)
         optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, modrm.reg, &op);
 
-        printf("  %lx:\t%s", pc, op.mnem);
+        printf("  %lx:\t%s", program_counter, op.mnem);
 
         // Foreach operand
         for (int i = 0; i < 3; i++) {
@@ -310,7 +316,7 @@ int main(int argc, char **argv)
 
         printf("\n");
 
-        pc += ftell(g_in) - strt;
+        program_counter += ftell(g_in) - strt;
     }
 
     return 0;
