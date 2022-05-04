@@ -1,4 +1,4 @@
-SRC=main.c
+SRC=main.c lex.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
 BIN=mcc

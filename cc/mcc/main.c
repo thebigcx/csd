@@ -1,3 +1,5 @@
+#include "mcc.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -55,6 +57,12 @@ int main(int argc, char **argv)
 
     input_file = xfopen(input, "r");
     output_file = xfopen(output, "w+");
+
+    lex_file(input_file);
+
+    char *t;
+    while (t = token())
+        printf("%s\n", t);
 
     free(input);
     free(output);
