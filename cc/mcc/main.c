@@ -9,8 +9,8 @@ FILE *input_file = NULL, *output_file = NULL;
 
 void cleanup()
 {
-    fclose(input_file);
-    fclose(output_file);
+    if (input_file)  fclose(input_file);
+    if (output_file) fclose(output_file);
 }
 
 void usage()
@@ -60,9 +60,10 @@ int main(int argc, char **argv)
 
     lex_file(input_file);
 
-    char *t;
-    while (t = token())
-        printf("%s\n", t);
+    struct ast *ast = expr(token());
+
+    cgfile(output_file);
+    cg(ast);
 
     free(input);
     free(output);

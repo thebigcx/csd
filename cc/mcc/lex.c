@@ -7,6 +7,7 @@ FILE *s_f = NULL;
 
 // List of symbol tokens
 static char *s_toks[] = {
+    "+",
     "{"
 };
 
@@ -66,4 +67,9 @@ char *token()
         scansym(ptr);
 
     return buf;
+}
+
+int oper(char *t)
+{
+    return t && *t == '+';
 }
