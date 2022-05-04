@@ -211,12 +211,28 @@ void do_memory(union modrm *modrm, struct optbl *optbl, op_t *op)
     printf("]");
 }
 
+// Get path to opcode table file
+char *get_optbl_path()
+{
+    char *home = getenv("HOME");
+    const char *rel = "/opt/share/optbl.txt";
+    
+    char *path = calloc(1, strlen(home) + strlen(rel) + 1);
+    strcat(strcat(path, home), rel);
+
+    return path;
+}
+
+void usage()
+{
+    printf("usage: disas <inputfile> -b -a <base>\n");
+    exit(-1);
+}
+
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
-        printf("usage: disas <inputfile> -b\n");
-        exit(-1);
-    }
+    if (argc < 2)
+        usage();
 
     char *input = NULL;
 
@@ -229,10 +245,8 @@ int main(int argc, char **argv)
             input = argv[i];
     }
 
-    if (!input) {
-        printf("usage: disas <inputfile> -b");
-        exit(-1);
-    }
+    if (!input)
+        usage();
 
     if (!(g_in = fopen(input, "r"))) {
         printf("disas: %s: %s\n", input, strerror(errno));
@@ -240,6 +254,8 @@ int main(int argc, char **argv)
     }
 
     atexit(cleanup);
+
+    char *optbl_path = get_optbl_path();
 
     read_metadata();
 
@@ -281,7 +297,7 @@ int main(int argc, char **argv)
         po = byte;
         
         struct optbl op = { 0 };
-        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, -1, &op);
+        optbl_from_opcode(optbl_path, inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, -1, &op);
 
         if (!(op.flag & OT_NOMODRM))
             modrm.bits = NXT(byte);
@@ -293,7 +309,7 @@ int main(int argc, char **argv)
         }
 
         // Seach again using ModR/M.reg (for instructions with /0, /2, etc.)
-        optbl_from_opcode("/home/chris/opt/share/optbl.txt", inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, modrm.reg, &op);
+        optbl_from_opcode(optbl_path, inst_set ? 0x0f : 0, po, opsz, rex & 0b1000, modrm.reg, &op);
 
         printf("  %lx:\t%s", program_counter, op.mnem);
 
@@ -319,5 +335,6 @@ int main(int argc, char **argv)
         program_counter += ftell(g_in) - strt;
     }
 
+    free(optbl_path);
     return 0;
 }
