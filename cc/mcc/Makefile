@@ -1,8 +1,8 @@
-SRC=main.c lex.c expr.c cg.c
+SRC=main.c lex.c expr.c stmt.c cg.c
 OBJ=$(patsubst %.c, %.o, $(SRC))
 
 BIN=mcc
-CFLAGS=
+CFLAGS=-g
 
 .PHONY: all clean install
 

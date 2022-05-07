@@ -17,7 +17,10 @@ struct ast *expr(char *t)
 {
     struct ast *lhs = primary(t);
     if (!oper(t = token()))
+    {
+        tputbck(t);
         return lhs;
+    }
 
     struct ast *ast = NEW(struct ast);
 

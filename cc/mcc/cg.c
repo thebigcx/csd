@@ -93,3 +93,13 @@ void cgfile(FILE *out)
 {
     s_out = out;
 }
+
+void cgfndef(char *name)
+{
+    fprintf(s_out, "%s:\n", name);
+}
+
+void cgfnend()
+{
+    fprintf(s_out, "\tret\n");
+}

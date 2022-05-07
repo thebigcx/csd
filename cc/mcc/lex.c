@@ -3,12 +3,14 @@
 #include <string.h>
 #include <ctype.h>
 
-FILE *s_f = NULL;
+static FILE *s_f      = NULL;
+static char *s_putbck = NULL;
 
 // List of symbol tokens
 static char *s_toks[] = {
-    "+",
-    "{"
+    "+", "-", "*", "/",
+    "(", ")", "{", "}",
+    ";"
 };
 
 void lex_file(FILE *f)
@@ -55,6 +57,13 @@ static void scansym(char *buf)
 
 char *token()
 {
+    // Return putback token
+    if (s_putbck) {
+        char *t = s_putbck;
+        s_putbck = NULL;
+        return t;
+    }
+
     static char buf[128];
     char *ptr = buf;
 
@@ -72,4 +81,14 @@ char *token()
 int oper(char *t)
 {
     return t && *t == '+';
+}
+
+int eof()
+{
+    return feof(s_f);
+}
+
+void tputbck(char *t)
+{
+    s_putbck = t;
 }

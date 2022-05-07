@@ -4,8 +4,21 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 FILE *input_file = NULL, *output_file = NULL;
+
+void error(const char *msg, ...)
+{
+    printf("Error: ");
+
+    va_list arg;
+    va_start(arg, msg);
+
+    vprintf(msg, arg);
+
+    va_end(arg);
+}
 
 void cleanup()
 {
@@ -60,10 +73,10 @@ int main(int argc, char **argv)
 
     lex_file(input_file);
 
-    struct ast *ast = expr(token());
-
     cgfile(output_file);
-    cg(ast);
+    while (!eof()) {
+        decl(token());
+    }
 
     free(input);
     free(output);
