@@ -8,7 +8,7 @@ static char *s_putbck = NULL;
 
 // List of symbol tokens
 static char *s_toks[] = {
-    "+", "-", "*", "/",
+    "+", "-", "*", "/", "=",
     "(", ")", "{", "}",
     ";"
 };
@@ -80,7 +80,7 @@ char *token()
 
 int oper(char *t)
 {
-    return t && *t == '+';
+    return t && (*t == '+' || *t == '-' || *t == '=');
 }
 
 int eof()
@@ -91,4 +91,21 @@ int eof()
 void tputbck(char *t)
 {
     s_putbck = t;
+}
+
+int stclass(char *t)
+{
+    return ISTOK(t, "auto")   || ISTOK(t, "extrn")
+        || ISTOK(t, "static") || ISTOK(t, "regis");
+}
+
+int type(char *t)
+{
+    return ISTOK(t, "int")   || ISTOK(t, "uint") || ISTOK(t, "char")
+        || ISTOK(t, "uchar") || ISTOK(t, "long") || ISTOK(t, "ulong");
+}
+
+int ilit(char *t)
+{
+    return isdigit(*t);
 }

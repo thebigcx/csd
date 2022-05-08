@@ -54,9 +54,21 @@ void rfree(int r)
     s_rmap[r] = 0;
 }
 
+int cgassign(struct ast *ast)
+{
+    int rhs = cg(ast->rhs);
+
+    struct sym *sym = lookup(ast->lhs->val);
+    fprintf(s_out, "\tmov [rsp - %d], %s\n", symstckoff(sym), s_r64[rhs]);
+
+    return rhs;
+}
+
 // Generate binary operation
 int cgbinop(struct ast *ast)
 {
+    if (!strcmp(ast->val, "=")) return cgassign(ast);
+
     int rhs = cg(ast->rhs);
     int lhs = cg(ast->lhs);
 
@@ -79,11 +91,22 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+int cgid(struct ast *ast)
+{
+    int r = ralloc();
+
+    struct sym *s = lookup(ast->val);
+    fprintf(s_out, "\tmov %s, [rsp - %d] ; <%s>\n", s_r64[r], s->off, s->name);
+
+    return r;
+}
+
 int cg(struct ast *ast)
 {
     switch (ast->type) {
         case A_BINOP: return cgbinop(ast);
         case A_ILIT:  return cgilit(ast);
+        case A_ID:    return cgid(ast);
     }
 
     return NREG;

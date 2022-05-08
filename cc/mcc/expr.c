@@ -6,9 +6,10 @@ struct ast *primary(char *t)
 {
     struct ast *ast = NEW(struct ast);
     
-    ast->type = A_ILIT;
-    ast->val  = strdup(t);
+    if (ilit(t)) ast->type = A_ILIT;
+    else         ast->type = A_ID;
 
+    ast->val  = strdup(t);
     return ast;
 }
 

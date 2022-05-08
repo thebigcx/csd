@@ -71,9 +71,11 @@ int main(int argc, char **argv)
     input_file = xfopen(input, "r");
     output_file = xfopen(output, "w+");
 
+    // Initialize input/output files
     lex_file(input_file);
-
     cgfile(output_file);
+
+    newscope();
     while (!eof()) {
         decl(token());
     }
