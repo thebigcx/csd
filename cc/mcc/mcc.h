@@ -50,10 +50,12 @@ void stmt(char*); /* Statement */
 void decl(char*); /* Declaration/definition */
 
 // cg.c
-void cgfile(FILE*);  /* Set output file for code generator */
-int cg(struct ast*); /* Generate assembly for AST node */
-void cgfndef(char*); /* Generate function start */
-void cgfnend();      /* Generate function end */
+void cgfile(FILE*);   /* Set output file for code generator */
+int cg(struct ast*);  /* Generate assembly for AST node */
+void cgfndef(char*);  /* Generate function start */
+void cgfnend();       /* Generate function end */
+void cgscope(size_t); /* Enter stack frame */
+void cgleave();       /* Leave stack frame */
 
 // sym.c
 typedef union type
@@ -94,3 +96,4 @@ struct sym *lookup(char*);            /* Lookup symbol */
 unsigned int symstckoff(struct sym*); /* Compute stack offset */
 void addsym(struct sym);              /* Add symbol */
 unsigned int tysize(type_t*);         /* Compute type size */
+size_t symsize();                     /* Get total symbol size */

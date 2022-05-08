@@ -1,5 +1,7 @@
 #include "mcc.h"
 
+static int s_frm = 0; // Stack frame?
+
 /* Block of statements */
 void block()
 {
@@ -8,6 +10,12 @@ void block()
         stmt(t);
 
     tputbck(t);
+}
+
+void frame()
+{
+    s_frm = 0;
+    newscope();
 }
 
 /* Function definition */
@@ -20,11 +28,15 @@ void func(char *t)
     EXPECT(")");
 
     cgfndef(name);
+    frame();
+    // TODO: parameters
+
     EXPECT("{");
 
     block();
 
     EXPECT("}");
+    cgleave();
     cgfnend();
 
     free(name);
@@ -72,9 +84,26 @@ void decl(char *t)
     EXPECT(";");
 }
 
+void scope()
+{
+    frame();
+    block();
+    retscope();
+
+    cgleave();
+
+    EXPECT("}");
+}
+
 void stmt(char *t)
 {
-    if (ISTOK(t, "{")) { block(); EXPECT("}"); }
+    // Process declarations
+    if (!stclass(t) && !s_frm) {
+        cgscope(symsize());
+        s_frm = 1;
+    }
+
+    if (ISTOK(t, "{"))   scope();
     else if (stclass(t)) var(t);
     else                 cg(expr(t));
 

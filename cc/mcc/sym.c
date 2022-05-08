@@ -20,10 +20,12 @@ void retscope()
 // Lookup implementation
 static struct sym *_lookup(char *name, struct symtab *tab)
 {
+    if (!tab) return NULL;
+
     for (struct sym *s = tab->syms; s; s = s->nxt)
         if (!strcmp(s->name, name)) return s;
     
-    return NULL;
+    return _lookup(name, tab->parent);
 }
 
 struct sym *lookup(char *name)
@@ -34,8 +36,8 @@ struct sym *lookup(char *name)
 unsigned int symstckoff(struct sym *sym)
 {
     unsigned int off = sym->off;
-    for (struct symtab *s = s_curtab->parent; s; s = s->parent)
-        off += s->stckoff + 8;
+    for (struct symtab *s = s_curtab->parent; s->parent; s = s->parent)
+        off -= s->stckoff + 8;
 
     return off;
 }
@@ -60,4 +62,9 @@ unsigned int tysize(type_t *t)
     if (t->ptr) return 8;
 
     return t->sz;
+}
+
+size_t symsize()
+{
+    return s_curtab->stckoff;
 }

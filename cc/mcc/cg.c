@@ -58,8 +58,8 @@ int cgassign(struct ast *ast)
 {
     int rhs = cg(ast->rhs);
 
-    struct sym *sym = lookup(ast->lhs->val);
-    fprintf(s_out, "\tmov [rsp - %d], %s\n", symstckoff(sym), s_r64[rhs]);
+    struct sym *s = lookup(ast->lhs->val);
+    fprintf(s_out, "\tmov u%d [rsp %+d], %s ; <%s>\n", tysize(&s->type) * 8, -symstckoff(s), s_r64[rhs], s->name);
 
     return rhs;
 }
@@ -96,7 +96,7 @@ int cgid(struct ast *ast)
     int r = ralloc();
 
     struct sym *s = lookup(ast->val);
-    fprintf(s_out, "\tmov %s, [rsp - %d] ; <%s>\n", s_r64[r], s->off, s->name);
+    fprintf(s_out, "\tmov %s, u%d [rsp %+d] ; <%s>\n", s_r64[r], tysize(&s->type) * 8, -symstckoff(s), s->name);
 
     return r;
 }
@@ -119,10 +119,22 @@ void cgfile(FILE *out)
 
 void cgfndef(char *name)
 {
-    fprintf(s_out, "%s:\n", name);
+    fprintf(s_out, ":%s\n", name);
 }
 
 void cgfnend()
 {
     fprintf(s_out, "\tret\n");
+}
+
+void cgscope(size_t s)
+{
+    fprintf(s_out, "\tpush rbp\n");
+    fprintf(s_out, "\tmov rbp, rsp\n");
+    fprintf(s_out, "\tsub rsp, %ld\n", s);
+}
+
+void cgleave()
+{
+    fprintf(s_out, "\tleave\n");
 }
