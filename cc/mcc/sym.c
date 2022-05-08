@@ -35,9 +35,13 @@ struct sym *lookup(char *name)
 
 unsigned int symstckoff(struct sym *sym)
 {
+    if (s_curtab == sym->tab) return sym->off;
+
     unsigned int off = sym->off;
-    for (struct symtab *s = s_curtab->parent; s->parent; s = s->parent)
+    for (struct symtab *s = s_curtab->parent; s->parent; s = s->parent) {
         off -= s->stckoff + 8;
+        if (sym->tab == s) break;
+    }
 
     return off;
 }
@@ -50,11 +54,24 @@ void addsym(struct sym s)
         last = &(*last)->nxt;
 
     if (s.class == SC_AUTO) {
-        s.off = s_curtab->stckoff += tysize(&s.type);
+        s.off = s_curtab->stckoff;
+        s_curtab->stckoff += tysize(&s.type);
     }
+
+    addsymoff(s);
+}
+
+void addsymoff(struct sym s)
+{
+    // Get last symbol
+    struct sym **last = &s_curtab->syms;
+    while (*last && (*last)->nxt)
+        last = &(*last)->nxt;
 
     *last  = NEW(struct sym);
     **last = s;
+
+    (*last)->tab = s_curtab;
 }
 
 unsigned int tysize(type_t *t)
@@ -64,7 +81,7 @@ unsigned int tysize(type_t *t)
     return t->sz;
 }
 
-size_t symsize()
+struct symtab *curtab()
 {
-    return s_curtab->stckoff;
+    return s_curtab;
 }

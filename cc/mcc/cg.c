@@ -44,6 +44,9 @@ int ralloc()
     int i = -1;
     while (s_rmap[++i]);
 
+    if (i >= RCNT)
+        printf("Out of registers!\n");
+
     s_rmap[i] = 1;
     return i;
 }
@@ -54,12 +57,40 @@ void rfree(int r)
     s_rmap[r] = 0;
 }
 
+// Print a stack offset
+static void printoff(int off)
+{
+         if (off < 0) fprintf(s_out, " - %d", -off);
+    else if (off > 0) fprintf(s_out, " + %d", off);
+}
+
+// Access a variable
+void cgaccess(struct sym *s)
+{
+    switch (s->class) {
+        case SC_AUTO:
+            fprintf(s_out, "u%d [rsp", tysize(&s->type) * 8);
+            printoff(-symstckoff(s));
+            fprintf(s_out, "]");
+            break;
+
+        case SC_PUB:
+        case SC_STAT:
+        case SC_EXTRN: fprintf(s_out, "u%d [%s]", tysize(&s->type) * 8, s->name); break;
+        case SC_REG:   fprintf(s_out, "%s", s_r64[s->off]); break;
+    }
+}
+
+// Assignment expression
 int cgassign(struct ast *ast)
 {
     int rhs = cg(ast->rhs);
 
     struct sym *s = lookup(ast->lhs->val);
-    fprintf(s_out, "\tmov u%d [rsp %+d], %s ; <%s>\n", tysize(&s->type) * 8, -symstckoff(s), s_r64[rhs], s->name);
+
+    fprintf(s_out, "\tmov ");
+    cgaccess(s);
+    fprintf(s_out, ", %s : <%s>\n", s_r64[rhs], s->name);
 
     return rhs;
 }
@@ -91,12 +122,32 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+void cgvardef(struct sym *s)
+{
+    if (s->class == SC_REG) {
+        s->off = ralloc();
+    }
+
+    if (s->class == SC_PUB) fprintf(s_out, "\tglobal %s\n", s->name);
+    if (s->class == SC_EXTRN) fprintf(s_out, "\textern %s\n", s->name);
+
+    if (s->class == SC_PUB || s->class == SC_STAT) {
+        fprintf(s_out, ":%s\n", s->name);
+        fprintf(s_out, "\tzero %d\n", tysize(&s->type));
+    }
+
+    // TODO: data initialization
+}
+
 int cgid(struct ast *ast)
 {
     int r = ralloc();
 
     struct sym *s = lookup(ast->val);
-    fprintf(s_out, "\tmov %s, u%d [rsp %+d] ; <%s>\n", s_r64[r], tysize(&s->type) * 8, -symstckoff(s), s->name);
+
+    fprintf(s_out, "\tmov %s, ", s_r64[r]);
+    cgaccess(s);
+    fprintf(s_out, " ; <%s>\n", s->name);
 
     return r;
 }
@@ -117,8 +168,9 @@ void cgfile(FILE *out)
     s_out = out;
 }
 
-void cgfndef(char *name)
+void cgfndef(char *name, int priv)
 {
+    if (!priv) fprintf(s_out, "\tglobal %s\n", name);
     fprintf(s_out, ":%s\n", name);
 }
 
@@ -136,5 +188,9 @@ void cgscope(size_t s)
 
 void cgleave()
 {
+    // Free all 'register' symbols
+    for (struct sym *s = curtab()->syms; s; s = s->nxt)
+        if (s->class == SC_REG) rfree(s->off);
+
     fprintf(s_out, "\tleave\n");
 }

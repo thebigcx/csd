@@ -77,6 +77,18 @@ static struct regstr regstrs[] = {
     REGSTR("rcx", 8, 1),
     REGSTR("rdx", 8, 2),
     REGSTR("rbx", 8, 3),
+    REGSTR("rbp", 8, 4),
+    REGSTR("rsp", 8, 5),
+    REGSTR("rdi", 8, 6),
+    REGSTR("rsi", 8, 7),
+    REGSTR("r8",  8, 8),
+    REGSTR("r9",  8, 9),
+    REGSTR("r10", 8, 10),
+    REGSTR("r11", 8, 11),
+    REGSTR("r12", 8, 12),
+    REGSTR("r13", 8, 13),
+    REGSTR("r14", 8, 14),
+    REGSTR("r15", 8, 15),
 };
 
 static const char *reg_to_str(uint8_t reg, uint8_t size)
@@ -197,16 +209,31 @@ void do_memory(union modrm *modrm, struct optbl *optbl, op_t *op)
     }
 
     // Hard case: SIB byte
-    // TODO: special cases sp/bp
 
     uint8_t byte;
     union sib sib = { .bits = NXT(byte) };
 
-    printf(" [%s + (%s * %d)", reg_to_str(sib.base, 8), reg_to_str(sib.idx, 8), 1 << sib.scl);
+    printf(" [");
+
+    // When B.Base == BP, no base
+    if (sib.base != 0b101 || !modrm->mod) {
+        printf("%s", reg_to_str(sib.base, 8));
+        
+        // Join
+        if (sib.idx != 0b100 || modrm->mod) printf(" + ");
+    }
+    
+    // When X.Index == SP, no index
+    if (sib.idx != 0b100) {
+        printf("(%s * %d)", reg_to_str(sib.idx, 8), 1 << sib.scl);
+
+        // Join
+        if (modrm->mod) printf(" + ");
+    }
 
     // Displacements
-    if (modrm->mod == 1) printf(" + 0x%lx", read_immediate(1));
-    if (modrm->mod == 2) printf(" + 0x%lx", read_immediate(4));
+    if (modrm->mod == 1) printf("0x%lx", read_immediate(1));
+    if (modrm->mod == 2) printf("0x%lx", read_immediate(4));
 
     printf("]");
 }

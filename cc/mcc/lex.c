@@ -96,7 +96,7 @@ void tputbck(char *t)
 int stclass(char *t)
 {
     return ISTOK(t, "auto")   || ISTOK(t, "extrn")
-        || ISTOK(t, "static") || ISTOK(t, "regis");
+        || ISTOK(t, "static") || ISTOK(t, "regis") || ISTOK(t, "pub");
 }
 
 int type(char *t)

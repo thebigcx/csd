@@ -18,48 +18,12 @@ void frame()
     newscope();
 }
 
-/* Function definition */
-void func(char *t)
+// var() implementation, par = parameter offset
+static void _var(char *t, int class, int *par)
 {
-    if (type(t)) t = token(); // TODO: return type
+    struct sym sym = { .class = class };
 
-    char *name = strdup(t);
-    EXPECT("(");
-    EXPECT(")");
-
-    cgfndef(name);
-    frame();
-    // TODO: parameters
-
-    EXPECT("{");
-
-    block();
-
-    EXPECT("}");
-    cgleave();
-    cgfnend();
-
-    free(name);
-}
-
-static const char *s_stclas[] = {
-    [SC_AUTO]  = "auto",
-    [SC_STAT]  = "static",
-    [SC_EXTRN] = "extrn",
-    [SC_REG]   = "regis"
-};
-
-/* Variable declaration */
-void var(char *t)
-{
-    struct sym sym = { 0 };
-
-    // Storage class
-    sym.class = ISTOK(t, "auto")   ? SC_AUTO
-              : ISTOK(t, "static") ? SC_STAT
-              : ISTOK(t, "extrn")  ? SC_EXTRN : SC_REG;
-
-    if (type(t = token())) {
+    if (type(t)) {
         if (*t != 'u') sym.type.sgn = 1;
         else t++;
 
@@ -73,7 +37,63 @@ void var(char *t)
 
     sym.name = strdup(t);
 
-    addsym(sym);
+    if (par) {
+        sym.off = *par;
+        *par -= tysize(&sym.type);
+        addsymoff(sym);
+    } else
+        addsym(sym);
+
+    cgvardef(&sym);
+}
+
+/* Function definition */
+void func(char *t)
+{
+    int priv = 0;
+
+    // Private declaration
+    if (ISTOK(t, "priv")) {
+        priv = 1;
+        t = token();
+    }
+
+    if (type(t)) t = token(); // TODO: return type
+
+    char *name = strdup(t);
+    EXPECT("(");
+    EXPECT(")");
+
+    cgfndef(name, priv);
+    frame();
+    // TODO: parameters
+
+    int offset = -16;
+    while (strcmp(t = token(), "{")) {
+        _var(t, SC_AUTO, &offset);
+        EXPECT(";");
+    }
+
+    block();
+
+    EXPECT("}");
+    retscope();
+    cgleave();
+    cgfnend();
+
+    free(name);
+}
+
+/* Variable declaration */
+void var(char *t)
+{
+    // Storage class
+    int class = ISTOK(t, "auto")   ? SC_AUTO
+              : ISTOK(t, "static") ? SC_STAT
+              : ISTOK(t, "extrn")  ? SC_EXTRN
+              : ISTOK(t, "pub")    ? SC_PUB : SC_REG;
+
+    _var(t = token(), class, NULL);
 }
 
 void decl(char *t)
@@ -88,9 +108,9 @@ void scope()
 {
     frame();
     block();
-    retscope();
 
     cgleave();
+    retscope();
 
     EXPECT("}");
 }
@@ -99,7 +119,7 @@ void stmt(char *t)
 {
     // Process declarations
     if (!stclass(t) && !s_frm) {
-        cgscope(symsize());
+        cgscope(curtab()->stckoff);
         s_frm = 1;
     }
 

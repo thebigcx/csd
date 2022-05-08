@@ -49,13 +49,16 @@ struct ast *expr(char*); /* Expression */
 void stmt(char*); /* Statement */
 void decl(char*); /* Declaration/definition */
 
+struct sym;
+
 // cg.c
-void cgfile(FILE*);   /* Set output file for code generator */
-int cg(struct ast*);  /* Generate assembly for AST node */
-void cgfndef(char*);  /* Generate function start */
-void cgfnend();       /* Generate function end */
-void cgscope(size_t); /* Enter stack frame */
-void cgleave();       /* Leave stack frame */
+void cgfile(FILE*);         /* Set output file for code generator */
+int cg(struct ast*);        /* Generate assembly for AST node */
+void cgfndef(char*, int);   /* Generate function start */
+void cgfnend();             /* Generate function end */
+void cgscope(size_t);       /* Enter stack frame */
+void cgleave();             /* Leave stack frame */
+void cgvardef(struct sym*); /* Define variable */
 
 // sym.c
 typedef union type
@@ -73,14 +76,16 @@ typedef union type
 #define SC_STAT  1 /* Static   */
 #define SC_EXTRN 2 /* Extern   */
 #define SC_REG   3 /* Register */
+#define SC_PUB   4 /* Public   */
 
 struct sym /* Symbol */
 {
-    char        *name;
-    int          class; // Storage class
-    unsigned int off;   // Stack offset
-    type_t       type;  // Type
-    struct sym  *nxt;   // Next in linked-list
+    char          *name;
+    int            class; // Storage class
+    unsigned int   off;   // Stack offset or register index
+    type_t         type;  // Type
+    struct sym    *nxt;   // Next in linked-list
+    struct symtab *tab;   // Table
 };
 
 struct symtab /* Symbol table */
@@ -95,5 +100,6 @@ void retscope();                      /* Return (end) scope */
 struct sym *lookup(char*);            /* Lookup symbol */
 unsigned int symstckoff(struct sym*); /* Compute stack offset */
 void addsym(struct sym);              /* Add symbol */
+void addsymoff(struct sym);           /* Add symbol at stack offset */
 unsigned int tysize(type_t*);         /* Compute type size */
-size_t symsize();                     /* Get total symbol size */
+struct symtab *curtab();              /* Get symbol table */
