@@ -85,3 +85,25 @@ struct symtab *curtab()
 {
     return s_curtab;
 }
+
+type_t gettype(char *t)
+{
+    type_t type = { 0 };
+
+    // Signed?
+    if (*t != 'u') type.sgn = 1;
+    else t++;
+
+    // Size?
+         if (!strcmp(t, "char")) type.sz = 1;
+    else if (!strcmp(t, "shrt")) type.sz = 2;
+    else if (!strcmp(t, "int"))  type.sz = 4;
+    else if (!strcmp(t, "long")) type.sz = 8;
+
+    // Parse '*' for pointers
+    while (ISTOK(t = token(), "*"))
+        type.ptr++;
+
+    tputbck(t);
+    return type;
+}

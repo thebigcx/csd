@@ -59,6 +59,7 @@ void cgfnend();             /* Generate function end */
 void cgscope(size_t);       /* Enter stack frame */
 void cgleave();             /* Leave stack frame */
 void cgvardef(struct sym*); /* Define variable */
+void cgretrn(struct ast*);  /* Generate retrn */
 
 // sym.c
 typedef union type
@@ -103,3 +104,4 @@ void addsym(struct sym);              /* Add symbol */
 void addsymoff(struct sym);           /* Add symbol at stack offset */
 unsigned int tysize(type_t*);         /* Compute type size */
 struct symtab *curtab();              /* Get symbol table */
+type_t gettype(char*);                /* Parse type */

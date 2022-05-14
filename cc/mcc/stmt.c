@@ -24,13 +24,7 @@ static void _var(char *t, int class, int *par)
     struct sym sym = { .class = class };
 
     if (type(t)) {
-        if (*t != 'u') sym.type.sgn = 1;
-        else t++;
-
-            if (!strcmp(t, "char"))  sym.type.sz = 1;
-        else if (!strcmp(t, "int"))  sym.type.sz = 4;
-        else if (!strcmp(t, "long")) sym.type.sz = 8;
-
+        sym.type = gettype(t);
         t = token();
     } else
         sym.type = (type_t) { .sz = 4, .sgn = 1 }; // int
@@ -115,6 +109,11 @@ void scope()
     EXPECT("}");
 }
 
+void retrn()
+{
+    cgretrn(expr(token()));
+}
+
 void stmt(char *t)
 {
     // Process declarations
@@ -123,9 +122,10 @@ void stmt(char *t)
         s_frm = 1;
     }
 
-    if (ISTOK(t, "{"))   scope();
-    else if (stclass(t)) var(t);
-    else                 cg(expr(t));
+    if (ISTOK(t, "{"))          scope();
+    else if (stclass(t))        var(t);
+    else if (ISTOK(t, "retrn")) retrn();
+    else                        cg(expr(t));
 
     EXPECT(";");
 }

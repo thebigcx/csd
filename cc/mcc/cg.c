@@ -176,7 +176,6 @@ void cgfndef(char *name, int priv)
 
 void cgfnend()
 {
-    fprintf(s_out, "\tret\n");
 }
 
 void cgscope(size_t s)
@@ -193,4 +192,14 @@ void cgleave()
         if (s->class == SC_REG) rfree(s->off);
 
     fprintf(s_out, "\tleave\n");
+}
+
+void cgretrn(struct ast *e)
+{
+    // Return expression
+    int r = cg(e);
+    if (r != RAX)
+        fprintf(s_out, "\tmov rax, %s\n", s_r64[r]);
+
+    fprintf(s_out, "\tret\n");
 }
