@@ -2,6 +2,22 @@
 
 #include <string.h>
 
+struct ast *primary(char*);
+
+struct ast *pre(char *t)
+{
+    if (star(t)) {
+        struct ast *ast = NEW(struct ast);
+
+        ast->type = A_DEREF;
+        ast->lhs  = pre(token());
+
+        return ast;
+    }
+
+    return primary(t);
+}
+
 struct ast *primary(char *t)
 {
     struct ast *ast = NEW(struct ast);
@@ -16,7 +32,7 @@ struct ast *primary(char *t)
 // Expression. t: current tok
 struct ast *expr(char *t)
 {
-    struct ast *lhs = primary(t);
+    struct ast *lhs = pre(t);
     if (!oper(t = token()))
     {
         tputbck(t);

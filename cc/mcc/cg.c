@@ -20,6 +20,7 @@
 #define RCNT 12
 
 static FILE *s_out = NULL;
+static int s_elbl = 0; // End label of current function
 
 static const char *s_r64[] = {
     [RAX] = "rax",
@@ -57,6 +58,13 @@ void rfree(int r)
     s_rmap[r] = 0;
 }
 
+// Generate a unique label
+static int label()
+{
+    static int l = 0;
+    return l++;
+}
+
 // Print a stack offset
 static void printoff(int off)
 {
@@ -86,11 +94,19 @@ int cgassign(struct ast *ast)
 {
     int rhs = cg(ast->rhs);
 
-    struct sym *s = lookup(ast->lhs->val);
+    if (ast->lhs->type == A_DEREF) {
+        // Dereference pointer
+        int ad = cg(ast->lhs->lhs);
+        fprintf(s_out, "\tmov [%s], %s\n", s_r64[ad], s_r64[rhs]);
+        rfree(ad);
+    } else {
+        // Lookup symbol
+        struct sym *s = lookup(ast->lhs->val);
 
-    fprintf(s_out, "\tmov ");
-    cgaccess(s);
-    fprintf(s_out, ", %s : <%s>\n", s_r64[rhs], s->name);
+        fprintf(s_out, "\tmov ");
+        cgaccess(s);
+        fprintf(s_out, ", %s : <%s>\n", s_r64[rhs], s->name);
+    }
 
     return rhs;
 }
@@ -152,12 +168,25 @@ int cgid(struct ast *ast)
     return r;
 }
 
+/* Generate dereference */
+int cgderef(struct ast *ast)
+{
+    int r1 = ralloc();
+    int r2 = cg(ast->lhs);
+
+    fprintf(s_out, "\tmov %s, [%s]\n", s_r64[r1], s_r64[r2]);
+
+    rfree(r2);
+    return r1;
+}
+
 int cg(struct ast *ast)
 {
     switch (ast->type) {
         case A_BINOP: return cgbinop(ast);
         case A_ILIT:  return cgilit(ast);
         case A_ID:    return cgid(ast);
+        case A_DEREF: return cgderef(ast);
     }
 
     return NREG;
@@ -172,10 +201,14 @@ void cgfndef(char *name, int priv)
 {
     if (!priv) fprintf(s_out, "\tglobal %s\n", name);
     fprintf(s_out, ":%s\n", name);
+
+    s_elbl = label();
 }
 
 void cgfnend()
 {
+    fprintf(s_out, ":L%d\n", s_elbl);
+    fprintf(s_out, "\tret\n");
 }
 
 void cgscope(size_t s)
@@ -201,5 +234,5 @@ void cgretrn(struct ast *e)
     if (r != RAX)
         fprintf(s_out, "\tmov rax, %s\n", s_r64[r]);
 
-    fprintf(s_out, "\tret\n");
+    fprintf(s_out, "\tjmp L%d\n", s_elbl);
 }

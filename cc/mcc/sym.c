@@ -101,7 +101,7 @@ type_t gettype(char *t)
     else if (!strcmp(t, "long")) type.sz = 8;
 
     // Parse '*' for pointers
-    while (ISTOK(t = token(), "*"))
+    while (star(t = token()))
         type.ptr++;
 
     tputbck(t);

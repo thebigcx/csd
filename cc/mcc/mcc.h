@@ -22,6 +22,7 @@
 #define A_BINOP 0
 #define A_ILIT  1
 #define A_ID    2
+#define A_DEREF 3
 
 struct ast /* AST node */
 {
@@ -41,6 +42,7 @@ void tputbck(char*);  /* Putback token */
 int stclass(char*);   /* Storage class? */
 int type(char*);      /* Type? */
 int ilit(char*);      /* Int literal? */
+int star(char*);      /* '*' */
 
 // expr.c
 struct ast *expr(char*); /* Expression */

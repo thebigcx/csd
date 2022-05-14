@@ -109,3 +109,8 @@ int ilit(char *t)
 {
     return isdigit(*t);
 }
+
+int star(char *t)
+{
+    return ISTOK(t, "*");
+}
