@@ -18,17 +18,34 @@
         error("Expected '%s', got '%s'\n", t, e);   \
 }
 
+#define VT_INT (type_t) { .sz = 4, .sgn = 1 }
+
+// Type
+typedef union type
+{
+    uint32_t bits;
+    struct
+    {
+        uint32_t sgn : 1; // Signed
+        uint32_t ptr : 3; // Pointer count
+        uint32_t sz  : 4; // Size (1, 2, 4, 8)
+        uint32_t fn  : 1; // Function?
+    };
+} type_t;
+
 /* AST node types */
 #define A_BINOP 0
 #define A_ILIT  1
 #define A_ID    2
 #define A_DEREF 3
+#define A_CALL  4
 
 struct ast /* AST node */
 {
     int         type;
     struct ast *lhs, *rhs;
     char       *val;
+    type_t      vt; // Type
 };
 
 void error(const char *msg, ...); /* Print error message and exit */
@@ -64,17 +81,6 @@ void cgvardef(struct sym*); /* Define variable */
 void cgretrn(struct ast*);  /* Generate retrn */
 
 // sym.c
-typedef union type
-{
-    uint32_t bits;
-    struct
-    {
-        uint32_t sgn : 1; // Signed
-        uint32_t ptr : 3; // Pointer count
-        uint32_t sz  : 4; // Size (1, 2, 4, 8)
-    };
-} type_t;
-
 #define SC_AUTO  0 /* Auto     */
 #define SC_STAT  1 /* Static   */
 #define SC_EXTRN 2 /* Extern   */

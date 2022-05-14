@@ -50,7 +50,7 @@ void addsym(struct sym s)
 {
     // Get last symbol
     struct sym **last = &s_curtab->syms;
-    while (*last && (*last)->nxt)
+    while (*last)
         last = &(*last)->nxt;
 
     if (s.class == SC_AUTO) {
@@ -65,7 +65,7 @@ void addsymoff(struct sym s)
 {
     // Get last symbol
     struct sym **last = &s_curtab->syms;
-    while (*last && (*last)->nxt)
+    while (*last)
         last = &(*last)->nxt;
 
     *last  = NEW(struct sym);

@@ -22,6 +22,51 @@
 static FILE *s_out = NULL;
 static int s_elbl = 0; // End label of current function
 
+static const char *s_r8[] = {
+    [RAX] = "al",
+    [RBX] = "bl",
+    [RCX] = "cl",
+    [RDX] = "dl",
+    [R8]  = "r8l",
+    [R9]  = "r9l",
+    [R10] = "r10l",
+    [R11] = "r11l",
+    [R12] = "r12l",
+    [R13] = "r13l",
+    [R14] = "r14l",
+    [R15] = "r15l"
+};
+
+static const char *s_r16[] = {
+    [RAX] = "ax",
+    [RBX] = "bx",
+    [RCX] = "cx",
+    [RDX] = "dx",
+    [R8]  = "r8w",
+    [R9]  = "r9w",
+    [R10] = "r10w",
+    [R11] = "r11w",
+    [R12] = "r12w",
+    [R13] = "r13w",
+    [R14] = "r14w",
+    [R15] = "r15w"
+};
+
+static const char *s_r32[] = {
+    [RAX] = "eax",
+    [RBX] = "ebx",
+    [RCX] = "ecx",
+    [RDX] = "edx",
+    [R8]  = "r8d",
+    [R9]  = "r9d",
+    [R10] = "r10d",
+    [R11] = "r11d",
+    [R12] = "r12d",
+    [R13] = "r13d",
+    [R14] = "r14d",
+    [R15] = "r15d"
+};
+
 static const char *s_r64[] = {
     [RAX] = "rax",
     [RBX] = "rbx",
@@ -36,6 +81,20 @@ static const char *s_r64[] = {
     [R14] = "r14",
     [R15] = "r15"
 };
+
+// Get register
+const char *reg(int n, type_t t)
+{
+    switch (tysize(&t))
+    {
+        case 1: return s_r8[n];
+        case 2: return s_r16[n];
+        case 4: return s_r32[n];
+        case 8: return s_r64[n];
+    }
+
+    return NULL;
+}
 
 static int s_rmap[RCNT] = { 0 };
 
@@ -85,7 +144,7 @@ void cgaccess(struct sym *s)
         case SC_PUB:
         case SC_STAT:
         case SC_EXTRN: fprintf(s_out, "u%d [%s]", tysize(&s->type) * 8, s->name); break;
-        case SC_REG:   fprintf(s_out, "%s", s_r64[s->off]); break;
+        case SC_REG:   fprintf(s_out, "%s", reg(s->off, s->type)); break;
     }
 }
 
@@ -97,7 +156,7 @@ int cgassign(struct ast *ast)
     if (ast->lhs->type == A_DEREF) {
         // Dereference pointer
         int ad = cg(ast->lhs->lhs);
-        fprintf(s_out, "\tmov [%s], %s\n", s_r64[ad], s_r64[rhs]);
+        fprintf(s_out, "\tmov [%s], %s\n", reg(ad, ast->lhs->vt), reg(rhs, ast->rhs->vt));
         rfree(ad);
     } else {
         // Lookup symbol
@@ -105,7 +164,7 @@ int cgassign(struct ast *ast)
 
         fprintf(s_out, "\tmov ");
         cgaccess(s);
-        fprintf(s_out, ", %s : <%s>\n", s_r64[rhs], s->name);
+        fprintf(s_out, ", %s : <%s>\n", reg(rhs, ast->rhs->vt), s->name);
     }
 
     return rhs;
@@ -124,7 +183,7 @@ int cgbinop(struct ast *ast)
     if (!strcmp(ast->val, "+")) inst = "add";
     if (!strcmp(ast->val, "-")) inst = "sub";
 
-    fprintf(s_out, "\t%s %s, %s\n", inst, s_r64[lhs], s_r64[rhs]);
+    fprintf(s_out, "\t%s %s, %s\n", inst, reg(lhs, ast->lhs->vt), reg(rhs, ast->rhs->vt));
 
     rfree(rhs);
     return lhs;
@@ -134,7 +193,7 @@ int cgbinop(struct ast *ast)
 int cgilit(struct ast *ast)
 {
     int r = ralloc();
-    fprintf(s_out, "\tmov %s, %s\n", s_r64[r], ast->val);
+    fprintf(s_out, "\tmov %s, %s\n", reg(r, ast->vt), ast->val);
     return r;
 }
 
@@ -161,7 +220,7 @@ int cgid(struct ast *ast)
 
     struct sym *s = lookup(ast->val);
 
-    fprintf(s_out, "\tmov %s, ", s_r64[r]);
+    fprintf(s_out, "\tmov %s, ", reg(r, s->type));
     cgaccess(s);
     fprintf(s_out, " ; <%s>\n", s->name);
 
@@ -174,10 +233,27 @@ int cgderef(struct ast *ast)
     int r1 = ralloc();
     int r2 = cg(ast->lhs);
 
-    fprintf(s_out, "\tmov %s, [%s]\n", s_r64[r1], s_r64[r2]);
+    fprintf(s_out, "\tmov %s, [%s]\n", reg(r1, ast->vt), reg(r2, ast->lhs->vt));
 
     rfree(r2);
     return r1;
+}
+
+int cgcall(struct ast *ast)
+{
+    if (ast->lhs->type == A_ID) {
+        fprintf(s_out, "\tcall %s\n", ast->lhs->val);
+    } else {
+        int ad = cg(ast->lhs);
+        fprintf(s_out, "\tcall %s\n", reg(ad, ast->lhs->vt));
+        rfree(ad);
+    }
+
+    // Move return value
+    int r = ralloc();
+    if (r != RAX)
+        fprintf(s_out, "\tmov %s, rax\n", reg(r, ast->vt));
+    return r;
 }
 
 int cg(struct ast *ast)
@@ -187,6 +263,7 @@ int cg(struct ast *ast)
         case A_ILIT:  return cgilit(ast);
         case A_ID:    return cgid(ast);
         case A_DEREF: return cgderef(ast);
+        case A_CALL:  return cgcall(ast);
     }
 
     return NREG;
@@ -232,7 +309,7 @@ void cgretrn(struct ast *e)
     // Return expression
     int r = cg(e);
     if (r != RAX)
-        fprintf(s_out, "\tmov rax, %s\n", s_r64[r]);
+        fprintf(s_out, "\tmov rax, %s\n", reg(r, e->vt));
 
     fprintf(s_out, "\tjmp L%d\n", s_elbl);
 }

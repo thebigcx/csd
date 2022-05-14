@@ -52,15 +52,23 @@ void func(char *t)
         t = token();
     }
 
-    if (type(t)) t = token(); // TODO: return type
+    type_t ftype;
+
+    if (type(t)) {
+        ftype = gettype(t);
+        ftype.fn = 1;
+        t = token();
+    } else
+        ftype = (type_t) { .sgn = 1, .sz = 4, .fn = 1 }; // int
 
     char *name = strdup(t);
     EXPECT("(");
     EXPECT(")");
 
+    addsym((struct sym) { .name = name, .type = ftype, .class = SC_PUB });
+
     cgfndef(name, priv);
     frame();
-    // TODO: parameters
 
     int offset = -16;
     while (strcmp(t = token(), "{")) {
@@ -74,8 +82,6 @@ void func(char *t)
     retscope();
     cgleave();
     cgfnend();
-
-    free(name);
 }
 
 /* Variable declaration */
