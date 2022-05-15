@@ -164,10 +164,59 @@ int cgassign(struct ast *ast)
 
         fprintf(s_out, "\tmov ");
         cgaccess(s);
-        fprintf(s_out, ", %s : <%s>\n", reg(rhs, ast->lhs->vt), s->name);
+        fprintf(s_out, ", %s ; <%s>\n", reg(rhs, ast->lhs->vt), s->name);
     }
 
     return rhs;
+}
+
+const char *cmp(char *op)
+{
+    if (!strcmp(op, "<"))  return "setl";
+    if (!strcmp(op, ">"))  return "setg";
+    if (!strcmp(op, "<=")) return "setle";
+    if (!strcmp(op, ">=")) return "setge";
+    if (!strcmp(op, "==")) return "sete";
+    if (!strcmp(op, "!=")) return "setne";
+
+    return NULL;
+}
+
+int cgcmp(struct ast *ast, int lhs, int rhs)
+{
+    const char *inst = cmp(ast->val);
+
+    fprintf(s_out, "\tcmp %s, %s\n", reg(lhs, ast->vt), reg(rhs, ast->vt));
+    fprintf(s_out, "\t%s %s\n", inst, reg(rhs, (type_t) { .sz = 1 }));
+    fprintf(s_out, "\tmovzx %s, %s\n", reg(lhs, ast->vt), reg(rhs, (type_t) { .sz = 1 }));
+
+    rfree(rhs);
+    return lhs;
+}
+
+// Lazy evaluation
+int cglog(struct ast *ast)
+{
+    int l = label();
+    
+    int lhs = cg(ast->lhs);
+    fprintf(s_out, "\ttest %s, %s\n", reg(lhs, ast->vt), reg(lhs, ast->vt));
+
+    /* If &&, skip rhs if 0, if ||, skip rhs if 1 */
+    if (!strcmp(ast->val, "&&"))
+        fprintf(s_out, "\tjz L%d\n", l);
+    if (!strcmp(ast->val, "||"))
+        fprintf(s_out, "\tjnz L%d\n", l);
+
+    int rhs = cg(ast->rhs);
+    fprintf(s_out, "\ttest %s, %s\n", reg(rhs, ast->vt), reg(rhs, ast->vt));
+    
+    fprintf(s_out, ":L%d\n", l);
+    fprintf(s_out, "\tsetne %s\n", reg(rhs, (type_t) { .sz = 1 }));
+    fprintf(s_out, "\tmovzx %s, %s\n", reg(lhs, ast->vt), reg(rhs, (type_t) { .sz = 1 }));
+
+    rfree(rhs);
+    return lhs;
 }
 
 // Generate binary operation
@@ -175,13 +224,24 @@ int cgbinop(struct ast *ast)
 {
     if (!strcmp(ast->val, "=")) return cgassign(ast);
 
+    if (!strcmp(ast->val, "&&") || !strcmp(ast->val, "||"))
+        return cglog(ast);
+
     int rhs = cg(ast->rhs);
     int lhs = cg(ast->lhs);
+
+    if (cmp(ast->val)) return cgcmp(ast, lhs, rhs);
 
     const char *inst = NULL;
 
     if (!strcmp(ast->val, "+")) inst = "add";
     if (!strcmp(ast->val, "-")) inst = "sub";
+    if (!strcmp(ast->val, "&")) inst = "and";
+    if (!strcmp(ast->val, "|")) inst = "or";
+    if (!strcmp(ast->val, "^")) inst = "xor";
+
+    //if (!strcmp(ast->val, "&&")) inst = "and";
+    //if (!strcmp(ast->val, "||")) inst = "or";
 
     fprintf(s_out, "\t%s %s, %s\n", inst, reg(lhs, ast->lhs->vt), reg(rhs, ast->rhs->vt));
 
@@ -278,8 +338,10 @@ int cgcall(struct ast *ast)
         p->l1 = cg(p);
 
     // Push them
-    for (struct ast *p = ast->prv; p != ast; p = p->prv)
+    for (struct ast *p = ast->prv; p != ast; p = p->prv) {
         fprintf(s_out, "\tpush %s\n", reg(p->l1, p->vt));
+        rfree(p->l1);
+    }
 
     if (ast->lhs->type == A_ID) {
         fprintf(s_out, "\tcall %s\n", ast->lhs->val);
@@ -410,4 +472,9 @@ void cgwhileend(struct ast *ast)
 void cgdiscard(int r)
 {
     if (r != NREG) rfree(r);
+}
+
+void cgbyte(char c)
+{
+    fputc(c, s_out);
 }

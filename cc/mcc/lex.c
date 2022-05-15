@@ -8,10 +8,13 @@ static char *s_putbck = NULL;
 
 // List of symbol tokens
 static char *s_toks[] = {
-    "+", "-", "*", "/", "=", // Binary
-    "&", "-", "!", "~",      // Unary
-    "(", ")", "{", "}",      // Grouping
-    ";", ","                 // Separators
+    "+", "-", "*", "/", "=",          // Binary
+    "&", "-", "!", "~",               // Unary
+    "<", ">", "==", "!=", "<=", ">=", // Comparisons
+    "&", "|", "^",                    // Bitwise
+    "&&", "||",                       // Logical
+    "(", ")", "{", "}",               // Grouping
+    ";", ","                          // Separators
 };
 
 void lex_file(FILE *f)
@@ -56,6 +59,12 @@ static void scansym(char *buf)
     *ptr = 0;
 }
 
+static void scanasm()
+{
+    char c;
+    while ((c = fgetc(s_f)) != '`') cgbyte(c);
+}
+
 char *token()
 {
     // Return putback token
@@ -73,7 +82,10 @@ char *token()
 
     if (isalnum(*ptr)) // Ident or ilit
         scanid(ptr);
-    else               // Scan symbol(s)
+    else if (*ptr == '`') {
+        scanasm();
+        return token();
+    } else               // Scan symbol(s)
         scansym(ptr);
 
     return buf;
@@ -81,7 +93,8 @@ char *token()
 
 int oper(char *t)
 {
-    return t && (*t == '+' || *t == '-' || *t == '=');
+    return t && (*t == '+' || *t == '-' || *t == '=' || *t == '<' || *t == '>'
+        || *t == '!' || *t == '&' || *t == '|');
 }
 
 int eof()

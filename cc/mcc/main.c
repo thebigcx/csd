@@ -77,7 +77,9 @@ int main(int argc, char **argv)
 
     newscope();
     while (!eof()) {
-        decl(token());
+        char *t = token();
+        if (!t) break;
+        decl(t);
     }
 
     free(input);

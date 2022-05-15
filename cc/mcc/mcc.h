@@ -92,6 +92,7 @@ void cgifend(struct ast*);
 void cgwhile(struct ast*);
 void cgwhileend(struct ast*);
 void cgdiscard(int);        /* Discard the result */
+void cgbyte(char);
 
 // sym.c
 #define SC_AUTO  0 /* Auto     */
