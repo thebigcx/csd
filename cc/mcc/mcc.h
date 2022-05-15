@@ -51,6 +51,8 @@ struct ast /* AST node */
     char       *val;
     type_t      vt; // Type
     int         l1, l2; // Labels
+
+    struct ast *nxt, *prv; /* Linked list of function parameters */
 };
 
 void error(const char *msg, ...); /* Print error message and exit */

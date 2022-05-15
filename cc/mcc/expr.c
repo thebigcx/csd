@@ -59,7 +59,23 @@ struct ast *post(struct ast *br, char *t)
         ast->lhs  = br;
         ast->vt   = br->vt; // TODO
 
-        EXPECT(")");
+        ast->vt.fn = 0;
+
+        t = token();
+
+        // Parse parameters
+        struct ast **p = &ast;
+        while (!ISTOK(t, ")")) {
+            struct ast **prv = p;
+
+            p = &(*p)->nxt;
+            *p = expr(t);
+            (*p)->prv = *prv;
+
+            if (ISTOK(t = token(), ",")) t = token();
+        }
+
+        ast->prv = *p;
         return ast;
     }
 

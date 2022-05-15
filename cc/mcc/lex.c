@@ -11,7 +11,7 @@ static char *s_toks[] = {
     "+", "-", "*", "/", "=", // Binary
     "&", "-", "!", "~",      // Unary
     "(", ")", "{", "}",      // Grouping
-    ";"                      // Terminator
+    ";", ","                 // Separators
 };
 
 void lex_file(FILE *f)

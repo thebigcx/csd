@@ -273,6 +273,14 @@ int cgaddr(struct ast *ast)
 
 int cgcall(struct ast *ast)
 {
+    // Generate parameters (reverse order)
+    for (struct ast *p = ast->prv; p != ast; p = p->prv)
+        p->l1 = cg(p);
+
+    // Push them
+    for (struct ast *p = ast->prv; p != ast; p = p->prv)
+        fprintf(s_out, "\tpush %s\n", reg(p->l1, p->vt));
+
     if (ast->lhs->type == A_ID) {
         fprintf(s_out, "\tcall %s\n", ast->lhs->val);
     } else {
@@ -281,10 +289,17 @@ int cgcall(struct ast *ast)
         rfree(ad);
     }
 
+    // Restore stack
+    for (struct ast *p = ast->nxt; p; p = p->nxt)
+        fprintf(s_out, "\tpop %s\n", reg(RBX, p->vt));
+
+    type_t ret = ast->lhs->vt;
+    ret.fn = 0;
+
     // Move return value
     int r = ralloc();
     if (r != RAX)
-        fprintf(s_out, "\tmov %s, rax\n", reg(r, ast->vt));
+        fprintf(s_out, "\tmov %s, %s\n", reg(r, ast->vt), reg(RAX, ret));
     return r;
 }
 
