@@ -65,6 +65,12 @@ static void scanasm()
     while ((c = fgetc(s_f)) != '`') cgbyte(c);
 }
 
+static void scanstr(char *ptr)
+{
+    while ((*(++ptr) = fgetc(s_f)) != '"');
+    *ptr = 0;
+}
+
 char *token()
 {
     // Return putback token
@@ -82,6 +88,8 @@ char *token()
 
     if (isalnum(*ptr)) // Ident or ilit
         scanid(ptr);
+    else if (*ptr == '"')
+        scanstr(ptr);
     else if (*ptr == '`') {
         scanasm();
         return token();
@@ -122,6 +130,12 @@ int type(char *t)
 int ilit(char *t)
 {
     return isdigit(*t);
+}
+
+char *strlit(char *t)
+{
+    if (*t != '"') return NULL;
+    return t + 1;
 }
 
 int star(char *t)

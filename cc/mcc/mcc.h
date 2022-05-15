@@ -43,6 +43,7 @@ typedef union type
 #define A_WHILE 6
 #define A_UNARY 7
 #define A_ADDR  8
+#define A_STRLT 9
 
 struct ast /* AST node */
 {
@@ -67,6 +68,7 @@ int stclass(char*);   /* Storage class? */
 int type(char*);      /* Type? */
 int ilit(char*);      /* Int literal? */
 int star(char*);      /* '*' */
+char *strlit(char*);    /* String literal? */
 
 // expr.c
 struct ast *expr(char*); /* Expression */
@@ -93,6 +95,7 @@ void cgwhile(struct ast*);
 void cgwhileend(struct ast*);
 void cgdiscard(int);        /* Discard the result */
 void cgbyte(char);
+void cgstrs();              /* Generate string literals */
 
 // sym.c
 #define SC_AUTO  0 /* Auto     */

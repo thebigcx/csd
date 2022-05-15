@@ -22,6 +22,15 @@
 static FILE *s_out = NULL;
 static int s_elbl = 0; // End label of current function
 
+struct strlit
+{
+    int l;
+    char *s;
+};
+
+static struct strlit *s_strs = NULL;
+static int s_strc = 0;
+
 static const char *s_r8[] = {
     [RAX] = "al",
     [RBX] = "bl",
@@ -275,6 +284,19 @@ int cgilit(struct ast *ast)
     return r;
 }
 
+int cgstrlit(struct ast *ast)
+{
+    s_strs = realloc(s_strs, (s_strc + 1) * sizeof(struct strlit));
+    s_strs[s_strc++] = (struct strlit) {
+        .s = ast->val + 1,
+        .l = ast->l1 = label()
+    };
+
+    int r = ralloc();
+    fprintf(s_out, "\tmov %s, L%d ; <strliteral>\n", reg(r, ast->vt), ast->l1);
+    return r;
+}
+
 void cgvardef(struct sym *s)
 {
     if (s->class == SC_REG) {
@@ -375,6 +397,7 @@ int cg(struct ast *ast)
         case A_CALL:  return cgcall(ast);
         case A_UNARY: return cgunary(ast);
         case A_ADDR:  return cgaddr(ast);
+        case A_STRLT: return cgstrlit(ast);
     }
 
     return NREG;
@@ -477,4 +500,10 @@ void cgdiscard(int r)
 void cgbyte(char c)
 {
     fputc(c, s_out);
+}
+
+void cgstrs()
+{
+    for (int i = 0; i < s_strc; i++)
+        fprintf(s_out, ":L%d\n\tstr \"%s\"\n", s_strs[i].l, s_strs[i].s);
 }

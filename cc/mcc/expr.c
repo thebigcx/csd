@@ -88,10 +88,13 @@ struct ast *primary(char *t)
     struct ast *ast = NEW(struct ast);
     
     ast->val  = strdup(t);
-    
+
     if (ilit(t)) {
         ast->type = A_ILIT;
         ast->vt   = VT_INT;
+    } else if (strlit(t)) {
+        ast->type = A_STRLT;
+        ast->vt   = (type_t) { .sz = 1, .ptr = 1 }; // char*
     } else {
         ast->type = A_ID;
         ast->vt   = lookup(ast->val)->type;

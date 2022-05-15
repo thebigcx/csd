@@ -82,6 +82,8 @@ int main(int argc, char **argv)
         decl(t);
     }
 
+    cgstrs();
+
     free(input);
     free(output);
     return 0;
