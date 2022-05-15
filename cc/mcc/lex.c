@@ -8,9 +8,10 @@ static char *s_putbck = NULL;
 
 // List of symbol tokens
 static char *s_toks[] = {
-    "+", "-", "*", "/", "=",
-    "(", ")", "{", "}",
-    ";"
+    "+", "-", "*", "/", "=", // Binary
+    "&", "-", "!", "~",      // Unary
+    "(", ")", "{", "}",      // Grouping
+    ";"                      // Terminator
 };
 
 void lex_file(FILE *f)

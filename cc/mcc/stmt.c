@@ -80,7 +80,7 @@ void func(char *t)
 
     EXPECT("}");
     retscope();
-    cgleave();
+    s_frm = 1;
     cgfnend();
 }
 
@@ -94,6 +94,61 @@ void var(char *t)
               : ISTOK(t, "pub")    ? SC_PUB : SC_REG;
 
     _var(t = token(), class, NULL);
+}
+
+void ifstmt()
+{
+    EXPECT("(");
+    
+    struct ast *ast = NEW(struct ast);
+    
+    ast->type = A_IF;
+    ast->lhs  = expr(token());
+
+    EXPECT(")");
+
+    cgif(ast);
+    stmt(token());
+    cgifend(ast);
+}
+
+void whilestmt()
+{
+    EXPECT("(");
+
+    struct ast *ast = NEW(struct ast);
+
+    ast->type = A_WHILE;
+    ast->lhs  = expr(token());
+
+    EXPECT(")");
+
+    cgwhile(ast);
+    stmt(token());
+    cgwhileend(ast);
+}
+
+void forstmt()
+{
+    EXPECT("(");
+
+    cgdiscard(cg(expr(token())));
+    EXPECT(";")
+
+    struct ast *ast = NEW(struct ast);
+
+    ast->type = A_WHILE;
+    ast->lhs  = expr(token());
+
+    EXPECT(";");
+
+    struct ast *upd = expr(token());
+    EXPECT(")");
+
+    cgwhile(ast);
+    stmt(token());
+    cgdiscard(cg(upd));
+    cgwhileend(ast);
 }
 
 void decl(char *t)
@@ -111,6 +166,7 @@ void scope()
 
     cgleave();
     retscope();
+    s_frm = 1;
 
     EXPECT("}");
 }
@@ -131,7 +187,10 @@ void stmt(char *t)
     if (ISTOK(t, "{"))          scope();
     else if (stclass(t))        var(t);
     else if (ISTOK(t, "retrn")) retrn();
-    else                        cg(expr(t));
+    else if (ISTOK(t, "if"))    { ifstmt(); return; }
+    else if (ISTOK(t, "while")) { whilestmt(); return; }
+    else if (ISTOK(t, "for"))   { forstmt(); return; }
+    else                        cgdiscard(cg(expr(t)));
 
     EXPECT(";");
 }

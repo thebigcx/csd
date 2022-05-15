@@ -39,6 +39,10 @@ typedef union type
 #define A_ID    2
 #define A_DEREF 3
 #define A_CALL  4
+#define A_IF    5
+#define A_WHILE 6
+#define A_UNARY 7
+#define A_ADDR  8
 
 struct ast /* AST node */
 {
@@ -46,6 +50,7 @@ struct ast /* AST node */
     struct ast *lhs, *rhs;
     char       *val;
     type_t      vt; // Type
+    int         l1, l2; // Labels
 };
 
 void error(const char *msg, ...); /* Print error message and exit */
@@ -79,6 +84,12 @@ void cgscope(size_t);       /* Enter stack frame */
 void cgleave();             /* Leave stack frame */
 void cgvardef(struct sym*); /* Define variable */
 void cgretrn(struct ast*);  /* Generate retrn */
+void cgif(struct ast*);
+void cgelse(struct ast*);
+void cgifend(struct ast*);
+void cgwhile(struct ast*);
+void cgwhileend(struct ast*);
+void cgdiscard(int);        /* Discard the result */
 
 // sym.c
 #define SC_AUTO  0 /* Auto     */

@@ -18,7 +18,31 @@ struct ast *pre(char *t)
         ast->vt.ptr--;
 
         return ast;
-    }
+    } else if (ISTOK(t, "&")) {
+        struct ast *lhs = pre(token());
+
+        /* Cancel out &* */
+        if (lhs->type == A_DEREF) return lhs->lhs;
+
+        struct ast *ast = NEW(struct ast);
+
+        ast->type = A_ADDR;
+        ast->lhs  = lhs;
+
+        ast->vt   = ast->lhs->vt;
+        ast->vt.ptr++;
+
+        return ast;
+    } else if (ISTOK(t, "!") || ISTOK(t, "~") || ISTOK(t, "-")) {
+        struct ast *ast = NEW(struct ast);
+
+        ast->type = A_UNARY;
+        ast->val  = strdup(t);
+        ast->lhs  = pre(token());
+        ast->vt   = ast->lhs->vt;
+
+        return ast;
+    } 
 
     struct ast *br = primary(t);
     return post(br, token());

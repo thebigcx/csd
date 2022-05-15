@@ -120,7 +120,7 @@ void rfree(int r)
 // Generate a unique label
 static int label()
 {
-    static int l = 0;
+    static int l = 1;
     return l++;
 }
 
@@ -156,7 +156,7 @@ int cgassign(struct ast *ast)
     if (ast->lhs->type == A_DEREF) {
         // Dereference pointer
         int ad = cg(ast->lhs->lhs);
-        fprintf(s_out, "\tmov [%s], %s\n", reg(ad, ast->lhs->vt), reg(rhs, ast->rhs->vt));
+        fprintf(s_out, "\tmov [%s], %s\n", reg(ad, ast->lhs->vt), reg(rhs, ast->lhs->vt));
         rfree(ad);
     } else {
         // Lookup symbol
@@ -164,7 +164,7 @@ int cgassign(struct ast *ast)
 
         fprintf(s_out, "\tmov ");
         cgaccess(s);
-        fprintf(s_out, ", %s : <%s>\n", reg(rhs, ast->rhs->vt), s->name);
+        fprintf(s_out, ", %s : <%s>\n", reg(rhs, ast->lhs->vt), s->name);
     }
 
     return rhs;
@@ -186,6 +186,24 @@ int cgbinop(struct ast *ast)
     fprintf(s_out, "\t%s %s, %s\n", inst, reg(lhs, ast->lhs->vt), reg(rhs, ast->rhs->vt));
 
     rfree(rhs);
+    return lhs;
+}
+
+int cgunary(struct ast *ast)
+{
+    int lhs = cg(ast->lhs);
+    int log = !strcmp(ast->val, "!"); // Logical
+
+    const char *inst = NULL;
+
+    if (!strcmp(ast->val, "~")|| log) inst = "not";
+    if (!strcmp(ast->val, "-")) inst = "neg";
+
+    fprintf(s_out, "\t%s %s\n", inst, reg(lhs, ast->lhs->vt));
+
+    if (log)
+        fprintf(s_out, "\tand %s, 1\n", reg(lhs, ast->lhs->vt));
+
     return lhs;
 }
 
@@ -230,12 +248,26 @@ int cgid(struct ast *ast)
 /* Generate dereference */
 int cgderef(struct ast *ast)
 {
-    int r1 = ralloc();
     int r2 = cg(ast->lhs);
+    int r1 = ralloc();
 
     fprintf(s_out, "\tmov %s, [%s]\n", reg(r1, ast->vt), reg(r2, ast->lhs->vt));
 
     rfree(r2);
+    return r1;
+}
+
+/* Generate address-of */
+int cgaddr(struct ast *ast)
+{
+    int r1 = ralloc();
+
+    struct sym *s = lookup(ast->lhs->val);
+
+    fprintf(s_out, "\tlea %s, ", reg(r1, ast->vt));
+    cgaccess(s);
+    fprintf(s_out, " ; <%s>\n", s->name);
+
     return r1;
 }
 
@@ -264,6 +296,8 @@ int cg(struct ast *ast)
         case A_ID:    return cgid(ast);
         case A_DEREF: return cgderef(ast);
         case A_CALL:  return cgcall(ast);
+        case A_UNARY: return cgunary(ast);
+        case A_ADDR:  return cgaddr(ast);
     }
 
     return NREG;
@@ -285,6 +319,7 @@ void cgfndef(char *name, int priv)
 void cgfnend()
 {
     fprintf(s_out, ":L%d\n", s_elbl);
+    fprintf(s_out, "\tleave\n");
     fprintf(s_out, "\tret\n");
 }
 
@@ -301,7 +336,8 @@ void cgleave()
     for (struct sym *s = curtab()->syms; s; s = s->nxt)
         if (s->class == SC_REG) rfree(s->off);
 
-    fprintf(s_out, "\tleave\n");
+    if (curtab()->syms)
+        fprintf(s_out, "\tleave\n");
 }
 
 void cgretrn(struct ast *e)
@@ -312,4 +348,51 @@ void cgretrn(struct ast *e)
         fprintf(s_out, "\tmov rax, %s\n", reg(r, e->vt));
 
     fprintf(s_out, "\tjmp L%d\n", s_elbl);
+}
+
+void cgif(struct ast *ast)
+{
+    ast->l1 = label();
+
+    int r = cg(ast->lhs);
+
+    fprintf(s_out, "\ttest %s, %s\n", reg(r, ast->lhs->vt), reg(r, ast->lhs->vt));
+    fprintf(s_out, "\tjz L%d\n", ast->l1);
+
+    rfree(r);
+}
+
+void cgifelse(struct ast *ast)
+{
+    ast->l2 = label();
+    
+    fprintf(s_out, ":L%d\n", ast->l1);
+}
+
+void cgifend(struct ast *ast)
+{
+    fprintf(s_out, ":L%d\n", ast->l2 ? ast->l2 : ast->l1);
+}
+
+void cgwhile(struct ast *ast)
+{
+    ast->l1 = label();
+    ast->l2 = label();
+
+    fprintf(s_out, ":L%d\n", ast->l1);
+    
+    int r = cg(ast->lhs);
+    fprintf(s_out, "\ttest %s, %s\n", reg(r, ast->lhs->vt), reg(r, ast->lhs->vt));
+    fprintf(s_out, "\tjz L%d\n", ast->l2);
+}
+
+void cgwhileend(struct ast *ast)
+{
+    fprintf(s_out, "\tjmp L%d\n", ast->l1);
+    fprintf(s_out, ":L%d\n", ast->l2);
+}
+
+void cgdiscard(int r)
+{
+    if (r != NREG) rfree(r);
 }
